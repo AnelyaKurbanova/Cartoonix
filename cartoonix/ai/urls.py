@@ -1,7 +1,6 @@
 from django.urls import path
-from . import views  # Import your views from the same app
+from ai.views import GenerateVideoPromptView
 
 urlpatterns = [
-    # Example URL pattern
-
+    path('generate/', GenerateVideoPromptView.as_view()),
 ]
