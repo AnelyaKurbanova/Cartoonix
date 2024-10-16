@@ -2,9 +2,12 @@ from django.http import JsonResponse
 from ai.models import VideoPrompt
 from ai.gpt import generate_photo_descriptions, generate_images_from_descriptions
 from ai.s3_utils import upload_image_to_s3
+from ai.serializers import VideoPromptSerializer
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status 
 
-class GenerateVideoPromptView(APIView):
+class GenerateVideo(APIView):
     def post(self, request):
         user_prompt = request.data
         if not user_prompt:
@@ -37,3 +40,34 @@ class GenerateVideoPromptView(APIView):
                 'arrImages': video_prompt.arrImages,
             }
         })
+    
+    def get(self, request):
+        generatedVideos = VideoPrompt.objects.all()
+        serializer = VideoPromptSerializer(generatedVideos, many=True)
+        return Response(serializer.data)
+    
+class VideoDetail(APIView):
+    def get_object(self, pk):
+        try:
+            video = VideoPrompt.objects.get(pk=pk)
+            return video
+        except VideoPrompt.DoesNotExist as e:
+            return Response({'error': str(e)})
+        
+    def get(self, request, pk):
+        video = self.get_object(pk)
+        serializer = VideoPromptSerializer(video)
+        return Response(serializer.data)
+    
+    def put(self, request, pk):
+        video = self.get_object(pk)
+        serializer = VideoPromptSerializer(video, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+    def delete(self, request, pk=None):
+        video = self.get_object(pk)
+        video.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
