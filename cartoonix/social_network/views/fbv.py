@@ -1,8 +1,8 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from ..models import Post, Like, Comment
-from ..serializers import PostSerializer, CommentSerializer
+from ..models import Post, Like, Comment, Profile
+from ..serializers import PostSerializer, CommentSerializer, UserRegisterSerializer, ProfileSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -93,3 +93,40 @@ def unlike_post(request, post_id):
         return Response({"message": "Like removed"}, status=status.HTTP_204_NO_CONTENT)
     except Like.DoesNotExist:
         return Response({"message": "You haven't liked this post"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def register_user(request):
+    if request.method == 'POST':
+        serializer = UserRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PATCH'])
+def update_profile(request):
+    try:
+        profile = Profile.objects.get(user=request.user)
+    except Profile.DoesNotExist:
+        return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PATCH':
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_profile(request):
+    try:
+        profile = Profile.objects.get(user=request.user)
+        user = request.user
+    except Profile.DoesNotExist:
+        return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'DELETE':
+        profile.delete()
+        user.delete()  # Удаление пользователя из системы
+        return Response({"message": "Profile and user account deleted"}, status=status.HTTP_204_NO_CONTENT)
