@@ -62,7 +62,7 @@ class LikeSerializer(serializers.ModelSerializer):
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    email = serializers.EmailField()  # Убедимся, что поле email включено
+    email = serializers.EmailField()
 
     class Meta:
         model = User
@@ -71,13 +71,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
-            email=validated_data['email'],  # Сохраняем email
+            email=validated_data['email'],
             password=validated_data['password']
         )
-        Profile.objects.create(user=user)  # Создаем профиль при регистрации
+        Profile.objects.create(user=user)
         return user
 
+
 class ProfileSerializer(serializers.ModelSerializer):
+    friends = serializers.StringRelatedField(many=True)
     class Meta:
         model = Profile
-        fields = ['image', 'bio', 'created_at']
+        fields = ['user', 'image', 'bio', 'created_at', 'friends']

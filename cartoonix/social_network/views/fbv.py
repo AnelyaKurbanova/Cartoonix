@@ -118,6 +118,7 @@ def update_profile(request):
             return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['DELETE'])
 def delete_profile(request):
     try:
@@ -128,5 +129,45 @@ def delete_profile(request):
 
     if request.method == 'DELETE':
         profile.delete()
-        user.delete()  # Удаление пользователя из системы
+        user.delete()
         return Response({"message": "Profile and user account deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def add_friend(request, profile_id):
+    try:
+        friend_profile = Profile.objects.get(pk=profile_id)
+        user_profile = request.user.profile
+
+        if user_profile == friend_profile:
+            return Response({"message": "You cannot add yourself as a friend"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user_profile.is_friend(friend_profile):
+            return Response({"message": "You are already friends"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_profile.add_friend(friend_profile)
+        return Response({"message": "Friend added successfully"}, status=status.HTTP_201_CREATED)
+    except Profile.DoesNotExist:
+        return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+def remove_friend(request, profile_id):
+    try:
+        friend_profile = Profile.objects.get(pk=profile_id)
+        user_profile = request.user.profile
+
+        if not user_profile.is_friend(friend_profile):
+            return Response({"message": "You are not friends with this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_profile.remove_friend(friend_profile)
+        return Response({"message": "Friend removed successfully"}, status=status.HTTP_204_NO_CONTENT)
+    except Profile.DoesNotExist:
+        return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def list_friends(request):
+    user_profile = request.user.profile
+    serializer = ProfileSerializer(user_profile)
+    return Response(serializer.data['friends'])
