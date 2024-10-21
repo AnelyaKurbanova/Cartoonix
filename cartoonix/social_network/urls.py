@@ -11,9 +11,12 @@ urlpatterns = [
     path('posts/<int:post_id>/comments/', fbv.comment_list, name='comment_list'),
     path('posts/<int:post_id>/like/', fbv.like_post, name='like_post'),
     path('posts/<int:post_id>/unlike/', fbv.unlike_post, name='unlike_post'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', fbv.register_user, name='register_user'),
     path('api/profile/update/', fbv.update_profile, name='update_profile'),
     path('api/profile/delete/', fbv.delete_profile, name='delete_profile'),
+    path('api/profile/friends/add/<int:profile_id>/', fbv.add_friend, name='add_friend'),
+    path('api/profile/friends/remove/<int:profile_id>/', fbv.remove_friend, name='remove_friend'),
+    path('api/profile/friends/', fbv.list_friends, name='list_friends'),
 ]
