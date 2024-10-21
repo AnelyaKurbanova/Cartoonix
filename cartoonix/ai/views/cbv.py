@@ -49,7 +49,7 @@ class GenerateVideo(APIView):
 class VideoDetail(APIView):
     def get_object(self, pk):
         try:
-            video = VideoPrompt.objects.get(pk=pk)
+            video = VideoPrompt.objects.get(id=pk)
             return video
         except VideoPrompt.DoesNotExist as e:
             return Response({'error': str(e)})
