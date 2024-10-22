@@ -2,8 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from PIL import Image
 from django.utils import timezone
-from ai.models import VideoPrompt
-
+# from ai.models import VideoPrompt
 
 class Post(models.Model):
     title = models.CharField(max_length=255)
@@ -11,6 +10,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default_post.jpg', upload_to='post_pics')
+
     # video_url = models.OneToOneField(
     #     VideoPrompt,
     #     on_delete=models.SET_NULL,
@@ -23,6 +23,10 @@ class Post(models.Model):
 
     def total_likes(self):
         return self.likes.count()
+
+    def is_liked_by_user(self, user):
+        return self.likes.filter(user=user).exists()
+
 
 class Comment(models.Model):
     content = models.TextField()
