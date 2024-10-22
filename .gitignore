@@ -47,3 +47,8 @@ ehthumbs.db
 # Others
 *.bak
 *.swp
+
+
+.venv/
+db.sqlite3
+.env

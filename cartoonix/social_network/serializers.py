@@ -6,6 +6,7 @@ from rest_framework import serializers
 from .models import Post
 from ai.models import VideoPrompt
 
+
 class VideoPromptSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoPrompt
