@@ -28,7 +28,7 @@ def upload_to_s3(file_data, file_name, folder=''):
     :return: URL of the uploaded file
     """
     try:
-        s3_path = f"{folder}/{file_name}" if folder else file_name
+        s3_path = f"{file_name}.png" if folder else file_name
         s3.upload_fileobj(
             BytesIO(file_data),
             AWS_STORAGE_BUCKET_NAME,

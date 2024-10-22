@@ -6,6 +6,7 @@ from ai.serializers import VideoPromptSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status 
+from django.shortcuts import render
 
 class GenerateVideo(APIView):
     def post(self, request):
@@ -45,6 +46,7 @@ class GenerateVideo(APIView):
         generatedVideos = VideoPrompt.objects.all()
         serializer = VideoPromptSerializer(generatedVideos, many=True)
         return Response(serializer.data)
+        # return render(request, 'ai/video_list.html', {'videos': serializer.data})
     
 class VideoDetail(APIView):
     def get_object(self, pk):
