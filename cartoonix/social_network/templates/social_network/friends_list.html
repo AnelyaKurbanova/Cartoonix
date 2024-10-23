@@ -1,0 +1,10 @@
+
+{% block content %}
+     <h2>Friends</h2>
+<ul>
+    {% for friend in friends %}
+        <li>{{ friend.user.username }} <a href="{% url 'remove_friend' friend.user.id %}">Remove</a></li>
+    {% endfor %}
+</ul>
+
+        {% endblock %}

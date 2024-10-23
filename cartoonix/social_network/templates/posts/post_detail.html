@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+  <h1>{{ post.title }}</h1>
+  <p>{{ post.content }}</p>
+  <img src="{{ post.image.url }}" alt="Post Image">
+
+  <p>Posted by {{ post.author }} on {{ post.created_at }}</p>
+
+  {% if is_liked %}
+    <a href="{% url 'like_post' post.pk %}">Unlike</a>
+  {% else %}
+    <a href="{% url 'like_post' post.pk %}">Like</a>
+  {% endif %}
+
+  <h2>Comments</h2>
+  <ul>
+    {% for comment in post.comments.all %}
+      <li>{{ comment.content }} - by {{ comment.author }}</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Add a Comment</h3>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Comment</button>
+  </form>
+{% endblock %}
