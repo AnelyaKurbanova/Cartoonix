@@ -5,3 +5,4 @@ urlpatterns = [
     path('generate/', GenerateVideo.as_view(), name='generate_video'),
     path('generate/<int:pk>/', VideoDetail.as_view(), name='video_detail'),
 ]
+

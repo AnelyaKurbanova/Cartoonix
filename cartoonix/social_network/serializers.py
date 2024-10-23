@@ -6,6 +6,12 @@ from rest_framework import serializers
 from .models import Post
 
 
+class VideoPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoPrompt
+        fields = ['id', 'prompt_text']  # Укажите необходимые поля
+
+
 # class UserRegisterSerializer(serializers.ModelSerializer):
 #     password = serializers.CharField(write_only=True)
 #     email = serializers.EmailField()

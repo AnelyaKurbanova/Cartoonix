@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Dashboard - Аналитика по постам пользователя</h1>
+
+
+<h2>Общие метрики</h2>
+<ul>
+    <li>Всего постов: {{ total_posts }}</li>
+    <li>Среднее количество лайков на пост: {{ avg_likes|floatformat:2 }}</li>
+    <li>Среднее количество комментариев на пост: {{ avg_comments|floatformat:2 }}</li>
+</ul>
+
+
+<h2>Топовые посты</h2>
+<ul>
+    {% for post in top_posts %}
+    <li>
+        <strong>{{ post.title }}</strong> - Лайков: {{ post.likes.count }}, Комментариев: {{ post.comments.count }}
+    </li>
+    {% endfor %}
+</ul>
+
+
+<h2>Топовые категории (Bar Chart)</h2>
+<img src="data:image/png;base64,{{ bar_chart }}" alt="Bar Chart">
+
+
+<h2>Распределение взаимодействий по категориям (Pie Chart)</h2>
+<img src="data:image/png;base64,{{ pie_chart }}" alt="Pie Chart">
+
+{% endblock %}

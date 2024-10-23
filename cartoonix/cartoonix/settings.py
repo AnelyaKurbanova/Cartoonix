@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'social_network',
     'rest_framework',
     'rest_framework_simplejwt',
+    
 ]
 
 MIDDLEWARE = [

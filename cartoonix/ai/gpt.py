@@ -90,3 +90,4 @@ def generate_images_from_descriptions(descriptions):
     except Exception as e:
         print(f"Error generating images: {e}")
         return []
+
