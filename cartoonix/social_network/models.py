@@ -1,12 +1,16 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractUser
 from django.db import models
 from PIL import Image
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 from ai.models import VideoPrompt
 from django import forms
-from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth.models import User
+
+
+
+# from ai.models import VideoPrompt
 
 
 class Post(models.Model):
@@ -15,12 +19,14 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default_post.jpg', upload_to='post_pics')
-    # video_url = models.OneToOneField(
-    #     VideoPrompt,
-    #     on_delete=models.SET_NULL,
-    #     null=True,
-    #     blank=True,
-    # )
+
+    video_url = models.OneToOneField(
+        VideoPrompt,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
 
     def __str__(self):
         return self.title
@@ -32,6 +38,10 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'content', 'image']
+
+    def is_liked_by_user(self, user):
+        return self.likes.filter(user=user).exists()
+
 
 class Comment(models.Model):
     content = models.TextField()
@@ -61,13 +71,12 @@ class Like(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
-    bio = models.TextField(max_length=500, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    friends = models.ManyToManyField('self', symmetrical=True, blank=True)
+    bio = models.TextField(blank=True, null=True)
+    friends = models.ManyToManyField('self', symmetrical=False, related_name='user_friends', blank=True)
 
     def __str__(self):
         return f'{self.user.username} Profile'
+
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -111,3 +120,4 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"Friend request from {self.from_user} to {self.to_user}"
+
