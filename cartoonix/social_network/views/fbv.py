@@ -5,102 +5,63 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from rest_framework import status
 from django.shortcuts import render, redirect, get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, login_required
 from rest_framework.response import Response
 from ..models import Post, Like, Comment, Profile
-from ..serializers import PostSerializer, CommentSerializer
+from ..serializers import PostSerializer, CommentSerializer,UserRegisterSerializer, ProfileSerializer
 from rest_framework.permissions import IsAuthenticated
-from ..forms import UserRegisterForm, ProfileUpdateForm
+from ..forms import UserRegisterForm, ProfileUpdateForm, CommentForm, PostForm
 
 
-@api_view(['GET', 'POST'])
+
+
 def post_list(request):
-    if request.method == 'GET':
-        posts = Post.objects.all()
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)
+    posts = Post.objects.all()
+    return render(request, 'posts/post_list.html', {'posts': posts})
 
-    elif request.method == 'POST':
-        serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    is_liked = False
+    if post.likes.filter(user=request.user).exists():
+        is_liked = True
+    return render(request, 'posts/post_detail.html', {'post': post, 'is_liked': is_liked})
 
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = PostForm()
+    return render(request, 'posts/create_post.html', {'form': form})
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def post_detail(request, post_id):
-    try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+@login_required
+def add_comment(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = CommentForm()
+    return render(request, 'posts/create_comment.html', {'form': form})
 
-    if request.method == 'GET':
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        if post.author != request.user:
-            return Response({"error": "You can only edit your own posts."}, status=status.HTTP_403_FORBIDDEN)
-        serializer = PostSerializer(post, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        if post.author != request.user:
-            return Response({"error": "You can only delete your own posts."}, status=status.HTTP_403_FORBIDDEN)
-        post.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['GET', 'POST'])
-def comment_list(request, post_id):
-    try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        comments = post.comments.all()
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=request.user, post=post)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['POST'])
-def like_post(request, post_id):
-    try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    like, created = Like.objects.get_or_create(post=post, user=request.user)
-    if created:
-        return Response({"message": "Post liked"}, status=status.HTTP_201_CREATED)
-    return Response({"message": "Post already liked"}, status=status.HTTP_200_OK)
-
-
-@api_view(['DELETE'])
-def unlike_post(request, post_id):
-    try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    try:
-        like = Like.objects.get(post=post, user=request.user)
-        like.delete()
-        return Response({"message": "Like removed"}, status=status.HTTP_204_NO_CONTENT)
-    except Like.DoesNotExist:
-        return Response({"message": "You haven't liked this post"}, status=status.HTTP_404_NOT_FOUND)
-
+@login_required
+def like_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if post.likes.filter(user=request.user).exists():
+        post.likes.get(user=request.user).delete()
+    else:
+        Like.objects.create(post=post, user=request.user)
+    return redirect('post_detail', pk=pk)
 
 def register(request):
     if request.method == 'POST':
