@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Requests - Cartoonix</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-top: 60px;
+        }
+        .card {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">Cartoonix</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">
+                            <i class="bi bi-people"></i> Friend Requests
+                        </h2>
+                        <ul id="friendRequestList" class="list-group">
+                            {% for request in friend_requests %}
+                                <li id="friendRequest-{{ request.id }}" class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-person-plus"></i>
+                                        {{ request.from_user.username }} wants to be your friend.
+                                    </span>
+                                    <div>
+                                        <button onclick="handleFriendRequest({{ request.id }}, 'accept')" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check"></i> Accept
+                                        </button>
+                                        <button onclick="handleFriendRequest({{ request.id }}, 'reject')" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-x"></i> Reject
+                                        </button>
+                                    </div>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-center">You have no friend requests.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'home' %}" class="btn btn-secondary">
+                        <i class="bi bi-house"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Обязательно добавляем CSRF токен -->
+    <form style="display:none;">
+        {% csrf_token %}
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function handleFriendRequest(requestId, action) {
+            let url = '';
+
+            if (action === 'accept') {
+                url = `{% url 'accept_friend_request' 0 %}`.replace('0', requestId); // Подставляем ID запроса
+            } else if (action === 'reject') {
+                url = `{% url 'reject_friend_request' 0 %}`.replace('0', requestId); // Подставляем ID запроса
+            }
+
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Удаляем запрос дружбы из списка
+                    const requestElement = document.getElementById(`friendRequest-${requestId}`);
+                    requestElement.remove();
+                    
+                    // Проверяем, остались ли еще запросы
+                    if (document.querySelectorAll('#friendRequestList li').length === 0) {
+                        document.getElementById('friendRequestList').innerHTML = '<li class="list-group-item text-center">You have no friend requests.</li>';
+                    }
+                    
+                    alert(`Friend request ${action === 'accept' ? 'accepted' : 'rejected'}.`);
+                } else {
+                    alert('Failed to process the friend request.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

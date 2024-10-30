@@ -5,7 +5,7 @@ from .models import Post, Comment, Like
 class PostAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'created_at')
     search_fields = ('title', 'content')
-    prepopulated_fields = {'slug': ('title',)}
+    # prepopulated_fields = {'slug': ('title')}
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
