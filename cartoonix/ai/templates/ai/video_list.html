@@ -1,8 +1,12 @@
-{% extends 'ai/base.html' %}
-
-{% block title %}Generated Videos{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Generated Videos</title>
+</head>
+<body>
     <h1 class="mb-4">Generated Videos</h1>
     
     <form method="POST" action="{% url 'generate_video' %}">
@@ -19,13 +23,33 @@
             <div class="col-md-4">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Prompt: {{ video.prompt }}</h5>
-                        <p class="card-text">Titles: {{ video.arrTitles | join:", " }}</p>
-                        <a href="{% url 'video_detail' video.id %}" class="btn btn-primary">View Details</a>
+{#                        <h5 class="card-title">Prompt: {{ video.prompt }}</h5>#}
+                        
+                        <!-- Carousel to display images -->
+                        <div id="carousel{{ video.id }}" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in video.arrImages %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ image }}" class="d-block w-100" alt="Generated Image">
+                                        <p>{{ image }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
     </div>
-{% endblock %}
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'ai',
     'social_network',
-    'rest_framework',
     'rest_framework_simplejwt',
     'widget_tweaks'
     

@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Post, Comment, Like
 
+from ai.models import VideoPrompt
+from .models import Post, Comment, Like, Profile
 from rest_framework import serializers
 from .models import Post
 

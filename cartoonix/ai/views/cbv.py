@@ -45,8 +45,8 @@ class GenerateVideo(APIView):
     def get(self, request):
         generatedVideos = VideoPrompt.objects.all()
         serializer = VideoPromptSerializer(generatedVideos, many=True)
-        return Response(serializer.data)
-        # return render(request, 'ai/video_list.html', {'videos': serializer.data})
+        # return Response(serializer.data)
+        return render(request, 'ai/video_list.html', {'videos': serializer.data})
     
 class VideoDetail(APIView):
     def get_object(self, pk):

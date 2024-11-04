@@ -1,10 +1,12 @@
+import matplotlib
+matplotlib.use('Agg')  # Используйте бэкэнд без GUI
+
 import matplotlib.pyplot as plt
 import io
 import base64
 from django.shortcuts import render
 from django.db.models import Count, Avg
-from Cartoonix.cartoonix.social_network.models import Post, Like, Comment
-
+from social_network.models import Post, Like, Comment
 
 def generate_bar_chart(chart_data):
     categories = [item['category'] for item in chart_data]
@@ -50,13 +52,15 @@ def dashboard(request):
     user = request.user  # Получаем текущего пользователя
 
     # Получаем все посты, созданные текущим пользователем
-    posts = Post.objects.filter(author=user)
+    posts = Post.objects.filter(author=user).annotate(
+        num_likes=Count('likes'),
+        num_comments=Count('comments')
+    )
 
     # Общие метрики
     total_posts = posts.count()
-    avg_likes = posts.annotate(num_likes=Count('likes')).aggregate(avg_likes=Avg('num_likes'))['avg_likes'] or 0
-    avg_comments = posts.annotate(num_comments=Count('comments')).aggregate(avg_comments=Avg('num_comments'))[
-                       'avg_comments'] or 0
+    avg_likes = posts.aggregate(avg_likes=Avg('num_likes'))['avg_likes'] or 0
+    avg_comments = posts.aggregate(avg_comments=Avg('num_comments'))['avg_comments'] or 0
 
     # Аналитика по категориям (Пример данных)
     chart_data = [
@@ -82,6 +86,6 @@ def dashboard(request):
         'avg_comments': avg_comments,
         'bar_chart': bar_chart,
         'pie_chart': pie_chart,
-        'top_posts': posts.order_by('-likes__count')[:5],  # Топовые посты по лайкам
+        'top_posts': posts.order_by('-num_likes')[:5],  # Топовые посты по лайкам
     }
-    return render(request, 'analytics/dashboard.html', context)
+    return render(request, 'dashboard.html', context)
