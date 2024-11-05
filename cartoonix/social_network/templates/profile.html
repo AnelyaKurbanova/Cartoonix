@@ -47,7 +47,7 @@
                         {% if request.user == user_profile.user %}
                             <div class="mt-3">
                                 <a href="{% url 'profile_update' %}" class="btn btn-secondary"><i class="bi bi-pencil"></i> Update Profile</a>
-                                <button onclick="deleteProfile()" class="btn btn-danger mt-2"><i class="bi bi-trash"></i> Delete Profile</button>
+                                <button onclick="deleteProfile()" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Profile</button>
                                 <a href="{% url 'view_friend_requests' %}" class="btn btn-info mt-2"><i class="bi bi-envelope"></i> View Friend Requests</a>
                             </div>
                         {% endif %}

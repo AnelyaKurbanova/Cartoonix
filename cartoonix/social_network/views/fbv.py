@@ -103,21 +103,20 @@ def comment_list(request, post_id):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @login_required(login_url='/social_network/login/')
 def like_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     user = request.user  # Получаем текущего пользователя
     liked = False
-    
-    # Проверяем, есть ли уже лайк от пользователя для данного поста
-    like, created = Like.objects.get_or_create(post=post, user=user)
 
-    if not created:
-        # Если лайк уже существует, удаляем его
+    # Проверяем, есть ли уже лайк от пользователя для данного поста
+    try:
+        like = Like.objects.get(post=post, user=user)
         like.delete()
         liked = False
-    else:
-        # Лайк создан
+    except Like.DoesNotExist:
+        like = Like.objects.create(post=post, user=user)
         liked = True
 
     data = {
@@ -200,14 +199,14 @@ def add_comment(request, pk):
         form = CommentForm()
     return render(request, 'posts/create_comment.html', {'form': form})
 
-@login_required
-def like_post(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    if post.likes.filter(user=request.user).exists():
-        post.likes.get(user=request.user).delete()
-    else:
-        Like.objects.create(post=post, user=request.user)
-    return redirect('post_detail', pk=pk)
+# @login_required
+# def like_post(request, pk):
+#     post = get_object_or_404(Post, pk=pk)
+#     if post.likes.filter(user=request.user).exists():
+#         post.likes.get(user=request.user).delete()
+#     else:
+#         Like.objects.create(post=post, user=request.user)
+#     return redirect('post_detail', pk=pk)
 
 def register(request):
     if request.method == 'POST':

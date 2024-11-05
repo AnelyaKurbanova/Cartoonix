@@ -19,10 +19,11 @@ s3 = boto3.client(
     region_name=AWS_S3_REGION_NAME
 )
 
+
 def upload_to_s3(file_data, original_file_name, folder=''):
     """
     Upload a file to the specified S3 bucket.
-    
+
     :param file_data: Byte data of the file to upload
     :param original_file_name: Original name of the file (used to extract the extension)
     :param folder: (Optional) Folder in the bucket to upload the file to
@@ -31,7 +32,7 @@ def upload_to_s3(file_data, original_file_name, folder=''):
     try:
         # Get the current timestamp
         timestamp = int(time.time())
-        
+
         # Extract the file extension from the original file name
         file_extension = os.path.splitext(original_file_name)[1]
 
@@ -49,7 +50,7 @@ def upload_to_s3(file_data, original_file_name, folder=''):
             s3_path,
             ExtraArgs={'ACL': 'public-read'}
         )
-        
+
         # Construct the full URL to the uploaded file
         s3_url = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{s3_path}"
         return s3_url
@@ -57,10 +58,11 @@ def upload_to_s3(file_data, original_file_name, folder=''):
         print(f"Error uploading file to S3: {e}")
         return None
 
+
 def upload_image_to_s3(image_url, folder='images'):
     """
     Upload an image to S3 by URL.
-    
+
     :param image_url: URL of the image to upload
     :param folder: Folder in S3 to upload the images to (default 'images')
     :return: URL of the uploaded image
@@ -75,10 +77,11 @@ def upload_image_to_s3(image_url, folder='images'):
         print(f"Error uploading image to S3: {e}")
         return None
 
+
 def upload_video_to_s3(video_url, folder='videos'):
     """
     Upload a video to S3 by URL.
-    
+
     :param video_url: URL of the video to upload
     :param folder: Folder in S3 to upload the videos to (default 'videos')
     :return: URL of the uploaded video
@@ -92,4 +95,3 @@ def upload_video_to_s3(video_url, folder='videos'):
     except Exception as e:
         print(f"Error uploading video to S3: {e}")
         return None
-

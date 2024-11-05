@@ -31,6 +31,7 @@
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{% url 'profile_view' request.user.username %}">My Profile</a>
                 <a class="nav-link" href="{% url 'list_friends' %}">View Friends</a>
+                <a class="nav-link" href="{% url 'generate_video' %}">Generate Video</a>
                 <a class="nav-link" href="{% url 'logout' %}">Logout</a>
             </div>
         </div>
@@ -56,7 +57,7 @@
                         {% if post.image %}
                             <img src="{{ post.image.url }}" alt="Post image" class="mb-3">
                         {% endif %}
-                        
+                        <br>
                         {% if post.author == request.user %}
                             <a href="{% url 'edit_post' post.id %}" class="btn btn-warning btn-sm">Edit</a>
                             <form action="{% url 'delete_post' post.id %}" method="POST" style="display:inline;">
@@ -65,7 +66,7 @@
                             </form>
                         {% endif %}
 
-                        <button class="btn btn-outline-primary btn-sm like-button mt-2" data-post-id="{{ post.id }}">
+                        <button class="btn btn-outline-primary btn-sm like-button" data-post-id="{{ post.id }}">
                             {% if user in post.likes.all %}
                                 Unlike (<span id="likes-count-{{ post.id }}">{{ post.total_likes }}</span>)
                             {% else %}
@@ -104,16 +105,17 @@
             button.addEventListener('click', function(event) {
                 const postId = this.getAttribute('data-post-id');
                 const url = `/social_network/posts/${postId}/like/`;
+
                 
                 // Отправляем AJAX-запрос
                 fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}', // Вставляем CSRF токен для защиты
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                })
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+})
                 .then(response => response.json())
                 .then(data => {
                     // Обновляем количество лайков на странице

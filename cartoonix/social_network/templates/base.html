@@ -11,9 +11,8 @@
         <h1>Welcome to Cartoonix</h1>
         <nav>
             <ul>
-                <li><a href="{% url 'post_list' %}">Home</a></li>
+
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'post_create' %}">Create Post</a></li>
                 {% else %}
                     <a href="{% url 'token_obtain_pair' %}">Login</a>
                     <li><a href="{% url 'register_user' %}">Register</a></li>

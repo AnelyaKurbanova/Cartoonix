@@ -16,12 +16,6 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default_post.jpg', upload_to='post_pics')
 
-    video_url = models.OneToOneField(
-        VideoPrompt,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
 
 
     def __str__(self):
@@ -68,6 +62,7 @@ class Like(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True, null=True)
+    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
     friends = models.ManyToManyField('self', symmetrical=False, related_name='user_friends', blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
 
@@ -79,11 +74,11 @@ class Profile(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        img = Image.open(self.image.path)
-        if img.height > 300 or img.width > 300:
-            output_size = (300, 300)
-            img.thumbnail(output_size)
-            img.save(self.image.path)
+        # img = Image.open(self.image.path)
+        # if img.height > 300 or img.width > 300:
+        #     output_size = (300, 300)
+        #     img.thumbnail(output_size)
+        #     img.save(self.image.path)
 
     def add_friend(self, profile):
         self.friends.add(profile)
