@@ -7,47 +7,59 @@
     <title>Generated Videos</title>
 </head>
 <body>
-    <h1 class="mb-4">Generated Videos</h1>
-    
-    <form method="POST" action="{% url 'generate_video' %}">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="prompt">Enter Video Prompt:</label>
-            <input type="text" id="prompt" name="prompt" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Generate Video</button>
-    </form>
+    <div class="container">
+        <h1 class="mb-4">Generated Videos</h1>
+        
+        <form method="POST" action="{% url 'generate_video' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="prompt">Enter Video Prompt:</label>
+                <input type="text" id="prompt" name="prompt" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Generate Video</button>
+        </form>
 
-    <div class="row mt-4">
-        {% for video in videos %}
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="card-body">
-{#                        <h5 class="card-title">Prompt: {{ video.prompt }}</h5>#}
-                        
-                        <!-- Carousel to display images -->
-                        <div id="carousel{{ video.id }}" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                {% for image in video.arrImages %}
-                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <img src="{{ image }}" class="d-block w-100" alt="Generated Image">
-                                        <p>{{ image }}</p>
-                                    </div>
+        <div class="row mt-4">
+            {% for video in videos %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Prompt: {{ video.prompt }}</h5>
+                            
+                            <!-- Carousel to display images -->
+                            <div id="carousel{{ video.id }}" class="carousel slide mb-3" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    {% for image in video.arrImages %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            <img src="{{ image }}" class="d-block w-100" alt="Generated Image">
+                                            <p>{{ image }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+
+                            <!-- Videos list -->
+                            <div class="videos">
+                                {% for video_url in video.arrVideos %}
+                                    <video class="w-100" controls>
+                                        <source src="{{ video_url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
                                 {% endfor %}
                             </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
