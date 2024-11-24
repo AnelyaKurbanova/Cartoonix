@@ -9,59 +9,87 @@ from rest_framework.response import Response
 from rest_framework import status 
 from django.shortcuts import render
 import base64
+import requests
+from moviepy.editor import VideoFileClip, concatenate_videoclips
+import uuid
+import os
+from rest_framework.renderers import JSONRenderer
 
 class GenerateVideo(APIView):
     def post(self, request):
-        user_prompt = request.data
-        if not user_prompt:
-            return JsonResponse({'error': 'No prompt provided'}, status=400)
+        try:
+            # Получение prompt из данных запроса
+            user_prompt = request.data.get("prompt")
+            if not user_prompt:
+                return Response({'error': 'No prompt provided'}, status=400)
 
-        descriptions = generate_photo_descriptions(user_prompt)
-        if not descriptions:
-            return JsonResponse({'error': 'Failed to generate descriptions'}, status=500)
+            # Генерация описаний
+            descriptions = generate_photo_descriptions(user_prompt)
+            if not descriptions:
+                return Response({'error': 'Failed to generate descriptions'}, status=500)
 
-        image_urls = generate_images_from_descriptions(descriptions)
-        if not image_urls:
-            return JsonResponse({'error': 'Failed to generate images'}, status=500)
+            # Генерация изображений
+            image_urls = generate_images_from_descriptions(descriptions)
+            if not image_urls:
+                return Response({'error': 'Failed to generate images'}, status=500)
 
-        s3_urls = []
-        for image_url in image_urls:
-            s3 = upload_image_to_s3(image_url)
-            if s3:
-                s3_urls.append(s3)
+            # Загрузка изображений в S3
+            s3_urls = [upload_image_to_s3(image) for image in image_urls if upload_image_to_s3(image)]
 
-        if not s3_urls:
-            return JsonResponse({'error': 'Failed to upload images to S3'}, status=500)
+            if not s3_urls:
+                return Response({'error': 'Failed to upload images to S3'}, status=500)
 
-        video_b64s = generate_video_from_images_with_nvidia(s3_urls)
-        if not video_b64s:
-            return JsonResponse({'error': 'Failed to generate videos with Nvidia'}, status=500)
+            # Генерация видео из изображений
+            video_b64s = generate_video_from_images_with_nvidia(s3_urls)
+            if not video_b64s:
+                return Response({'error': 'Failed to generate videos with Nvidia'}, status=500)
 
-        s3_video_urls = []
-        for video_b64 in video_b64s:
-            video_data = base64.b64decode(video_b64)
-            video_url = upload_video_to_s3(video_data)
-            if video_url:
-                s3_video_urls.append(video_url)
+            # Загрузка сгенерированных видео в S3
+            s3_video_urls = []
+            for video_b64 in video_b64s:
+                video_data = base64.b64decode(video_b64)
+                video_url = upload_video_to_s3(video_data)
+                if video_url:
+                    s3_video_urls.append(video_url)
 
-        video_prompt = VideoPrompt.objects.create(
-            prompt=user_prompt,
-            arrTitles=descriptions,
-            arrImages=s3_urls,
-            arrVideos=s3_video_urls
-        )
+            # Склейка видео
+            def merge_videos(video_urls):
+                output_file = f"{uuid.uuid4()}.mp4"
+                clips = [VideoFileClip(url) for url in video_urls]
+                final_clip = concatenate_videoclips(clips, method="compose")
+                final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac")
+                for clip in clips:
+                    clip.close()
+                final_clip.close()
+                return output_file
 
-        return JsonResponse({
-            'message': 'Success',
-            'video_prompt': {
-                'id': video_prompt.id,
-                'prompt': video_prompt.prompt,
-                'arrTitles': video_prompt.arrTitles,
-                'arrImages': video_prompt.arrImages,
-                'arrVideos': video_prompt.arrVideos,
-            }
-        })
+            merged_video = merge_videos(s3_video_urls)
 
+
+
+            # Загрузка объединённого видео в S3
+            with open(merged_video, "rb") as f:
+                video_data = f.read()
+            final_video_url = upload_video_to_s3(video_data)
+
+            # Удаление локального файла
+            os.remove(merged_video)
+
+            # Создание записи в базе данных
+            video_prompt = VideoPrompt.objects.create(
+                prompt=user_prompt,
+                arrTitles=descriptions,
+                arrImages=s3_urls,
+                arrVideos=s3_video_urls,
+                finalVideo=final_video_url
+            )
+
+            serialized_data = VideoPromptSerializer(video_prompt).data
+
+            return Response(serialized_data, status=201)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
     
     def get(self, request):
         generatedVideos = VideoPrompt.objects.all()

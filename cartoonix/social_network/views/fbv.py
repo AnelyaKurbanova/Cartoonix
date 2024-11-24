@@ -7,7 +7,7 @@ from rest_framework import status
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from ..models import FriendRequest, Post, Like, Comment, PostForm, Profile, ProfileForm
+from ..models import FriendRequest, Post, Comment, PostForm, Profile, ProfileForm
 from ..serializers import PostSerializer, CommentSerializer, UserRegisterSerializer, ProfileSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import render, get_object_or_404, redirect
@@ -21,16 +21,18 @@ from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from ..forms import UserRegisterForm, ProfileUpdateForm, CommentForm, PostForm
+from django.views.decorators.csrf import csrf_exempt
+import logging
 
 
 def login_page(request):
     if request.method == 'POST':
-        username = request.POST['username']  # Используем request.POST
+        username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user is not None:
-            login(request, user)  # Логиним пользователя в сессии
-            return redirect('home')  # Перенаправляем на главную страницу
+            login(request, user)
+            return redirect('home')
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'login.html')
@@ -104,19 +106,21 @@ def comment_list(request, post_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.http import JsonResponse, Http404
+
 @login_required(login_url='/social_network/login/')
 def like_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    user = request.user  # Получаем текущего пользователя
-    liked = False
-
-    # Проверяем, есть ли уже лайк от пользователя для данного поста
     try:
-        like = Like.objects.get(post=post, user=user)
-        like.delete()
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        raise Http404("Post does not exist")
+    
+    user = request.user
+    if user in post.likes.all():
+        post.likes.remove(user)  # Удаляем лайк
         liked = False
-    except Like.DoesNotExist:
-        like = Like.objects.create(post=post, user=user)
+    else:
+        post.likes.add(user)  # Добавляем лайк
         liked = True
 
     data = {
@@ -124,6 +128,7 @@ def like_post(request, post_id):
         'total_likes': post.total_likes(),
     }
     return JsonResponse(data)
+
 
 
 def register_user(request):
@@ -246,18 +251,20 @@ def update_profile(request):
 
 
 @login_required
+@csrf_exempt # Обязательно для запросов DELETE без формы
 def delete_profile(request):
-
     try:
         profile = Profile.objects.get(user=request.user)
         user = request.user
     except Profile.DoesNotExist:
-        return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        return JsonResponse({"message": "Profile not found"}, status=404)
 
     if request.method == 'DELETE':
         profile.delete()
         user.delete()
-        return Response({"message": "Profile and user account deleted"}, status=status.HTTP_204_NO_CONTENT)
+        return JsonResponse({"message": "Profile and user account deleted"}, status=204)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 @api_view(['POST'])
@@ -281,31 +288,23 @@ def send_friend_request(request, profile_id):
         return Response({"message": "Friend request sent successfully"}, status=status.HTTP_201_CREATED)
     except Profile.DoesNotExist:
         return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-@login_required
-def view_friend_requests(request):
-    friend_requests = FriendRequest.objects.filter(to_user=request.user, is_accepted=False)
-
-    context = {
-        'friend_requests': friend_requests,
-    }
-    return render(request, 'friend_requests.html', context)
 
 @api_view(['POST'])
 def accept_friend_request(request, request_id):
     try:
-        friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user)
+        friend_request = FriendRequest.objects.get(pk=request_id, to_user=request.user)
+        from_user = friend_request.from_user
 
-        # Принимаем запрос и добавляем в друзья
-        if friend_request.is_accepted is False:
-            request.user.profile.friends.add(friend_request.from_user.profile)
-            friend_request.from_user.profile.friends.add(request.user.profile)
-            friend_request.is_accepted = True
-            friend_request.save()
+        # Добавляем пользователей друг к другу в друзья
+        request.user.profile.friends.add(from_user.profile)
+        from_user.profile.friends.add(request.user.profile)
 
-        return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
+        # Удаляем запрос дружбы
+        friend_request.delete()
+
+        return JsonResponse({'message': 'Friend request accepted successfully'}, status=200)
     except FriendRequest.DoesNotExist:
-        return Response({"message": "Friend request not found"}, status=status.HTTP_404_NOT_FOUND)
+        return JsonResponse({'error': 'Friend request does not exist'}, status=404)
     
 @api_view(['POST'])
 def reject_friend_request(request, request_id):
@@ -325,12 +324,19 @@ def remove_friend(request, profile_id):
         user_profile = request.user.profile
 
         if not user_profile.is_friend(friend_profile):
-            return JsonResponse({"message": "You are not friends with this user"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"message": "You are not friends with this user"}, status=400)
 
-        user_profile.remove_friend(friend_profile)
-        return JsonResponse({"message": "Friend removed successfully"}, status=status.HTTP_204_NO_CONTENT)
+        # Удаляем друга из списка друзей
+        user_profile.friends.remove(friend_profile)
+        friend_profile.friends.remove(user_profile)
+
+        # Удаляем связанные запросы дружбы
+        FriendRequest.objects.filter(from_user=request.user, to_user=friend_profile.user).delete()
+        FriendRequest.objects.filter(from_user=friend_profile.user, to_user=request.user).delete()
+
+        return JsonResponse({"message": "Friend removed successfully"}, status=200)
     except Profile.DoesNotExist:
-        return JsonResponse({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        return JsonResponse({"message": "Profile not found"}, status=404)
 
 
 @login_required
@@ -376,18 +382,18 @@ def create_post(request):
 
 @login_required(login_url='/social_network/login/')
 def profile_view(request, username):
-    # Получаем пользователя по имени пользователя (username)
-    user = get_object_or_404(User, username=username)
-    profile = get_object_or_404(Profile, user=user)
+    user_profile = get_object_or_404(Profile, user__username=username)
+    friend_requests = FriendRequest.objects.filter(to_user=request.user)
 
-    # Проверяем, является ли текущий пользователь другом
-    is_friend = request.user.profile.is_friend(profile)
+    # Проверяем, есть ли запрос от текущего пользователя к отображаемому профилю
+    sent_request = FriendRequest.objects.filter(from_user=request.user, to_user=user_profile.user).exists()
 
     context = {
-        'user_profile': profile,
-        'is_friend': is_friend,  # Добавляем результат проверки в контекст
+        'user_profile': user_profile,
+        'friend_requests': friend_requests,
+        'is_friend': request.user.profile.is_friend(user_profile),
+        'sent_request': sent_request,  # Отправлен ли запрос дружбы
     }
-
     return render(request, 'profile.html', context)
 
 @login_required(login_url='/social_network/login/')
@@ -431,24 +437,11 @@ def delete_post(request, post_id):
     return redirect('register')
 
 
-@login_required
-def add_friend(request, user_id):
-    friend = Profile.objects.get(user__id=user_id)
-    request.user.profile.friends.add(friend)
-    return redirect('profile')
-
-
-@login_required
-def remove_friend(request, user_id):
-    friend = Profile.objects.get(user__id=user_id)
-    request.user.profile.friends.remove(friend)
-    return redirect('profile')
-
-
-@login_required
-def friends_list(request):
-    friends = request.user.profile.friends.all()
-    return render(request, 'social_network/friends_list.html', {'friends': friends})
+# @login_required
+# def remove_friend(request, user_id):
+#     friend = Profile.objects.get(user__id=user_id)
+#     request.user.profile.friends.remove(friend)
+#     return redirect('profile')
 
 
 # @api_view(['POST'])

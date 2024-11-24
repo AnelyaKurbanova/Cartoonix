@@ -39,6 +39,7 @@ def generate_video_from_images_with_nvidia(image_urls):
             
             if response_data.get('video'):
                 video_results.append(response_data['video'])
+                print(response_data['video'])
             else:
                 print(f"Failed to generate video for image URL: {image_url}")
         
