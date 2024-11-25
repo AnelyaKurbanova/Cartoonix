@@ -9,8 +9,9 @@ from .models import Post
 
 class VideoPromptSerializer(serializers.ModelSerializer):
     class Meta:
+        ref_name = "SocialNetwork_VideoPrompt"
         model = VideoPrompt
-        fields = ['id', 'prompt_text']  # Укажите необходимые поля
+        fields = '__all__'
 
 
 class PostSerializer(serializers.ModelSerializer):
