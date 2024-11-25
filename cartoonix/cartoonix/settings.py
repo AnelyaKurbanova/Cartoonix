@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'ai',
     'social_network',
     'rest_framework_simplejwt',
-    'widget_tweaks'
+    'widget_tweaks',
+    'drf_yasg',
     
 ]
 
@@ -149,4 +150,18 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+        },
+    },
+
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
 }
