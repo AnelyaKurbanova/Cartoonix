@@ -24,6 +24,7 @@ urlpatterns = [
     path('ai/', include('ai.urls')),
     path('social_network/', include('social_network.urls')),
     path('analytics/', include('analytics.urls')),
+    path('chat/', include('chat.urls')),
 ]
 
 
