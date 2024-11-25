@@ -10,7 +10,7 @@ from rest_framework import status
 from django.shortcuts import render
 import base64
 import requests
-from moviepy.editor import VideoFileClip, concatenate_videoclips
+from moviepy import VideoFileClip, concatenate_videoclips
 import uuid
 import os
 from rest_framework.renderers import JSONRenderer
