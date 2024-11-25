@@ -1,6 +1,9 @@
+import logging
 from django.shortcuts import redirect
 from django.conf import settings
 from django.urls import reverse
+
+logger = logging.getLogger('middleware_logger')
 
 EXEMPT_URLS = [reverse('login_page'), reverse('register_user')]  # URLs, которые не требуют аутентификации
 
@@ -15,6 +18,7 @@ class LoginRequiredMiddleware:
         if not request.user.is_authenticated:
             # Если пользователь не залогинен и пытается получить доступ к URL, кроме exempt (например, login)
             if request.path not in EXEMPT_URLS:
+                logger.warning(f"Unauthenticated access attempt to {request.path}. Redirecting to login page.")
                 return redirect('login_page')
         
         response = self.get_response(request)
