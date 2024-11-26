@@ -1,4 +1,7 @@
 import logging
+import matplotlib
+matplotlib.use('Agg')  # Используйте бэкэнд без GUI
+
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -69,7 +72,6 @@ def dashboard(request):
             num_comments=Count('comments')
         )
 
-        # Общие метрики
         total_posts = posts.count()
         avg_likes = posts.aggregate(avg_likes=Avg('num_likes'))['avg_likes'] or 0
         avg_comments = posts.aggregate(avg_comments=Avg('num_comments'))['avg_comments'] or 0

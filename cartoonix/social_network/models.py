@@ -1,5 +1,7 @@
 import logging
 from django.contrib.auth.models import User, AbstractUser
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from PIL import Image
 from django.db.models.signals import post_save
@@ -31,6 +33,9 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'content', 'image']
+
+    def is_liked_by_user(self, user):
+        return self.likes.filter(user=user).exists()
 
 
 class Comment(models.Model):
@@ -103,5 +108,25 @@ class FriendRequest(models.Model):
     is_accepted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+
     def __str__(self):
         return f"Friend request from {self.from_user} to {self.to_user}"
+
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
+    actor = models.ForeignKey(User, related_name='actor_notifications', on_delete=models.CASCADE)
+    verb = models.CharField(max_length=255)
+    target_content_type = models.ForeignKey(ContentType, blank=True, null=True, on_delete=models.CASCADE)
+    target_object_id = models.PositiveIntegerField(blank=True, null=True)
+    target = GenericForeignKey('target_content_type', 'target_object_id')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"Notification: {self.actor} {self.verb} to {self.recipient}"

@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Post, Comment, Profile
-
+from ai.models import VideoPrompt
 logger = logging.getLogger('form_logger')
 
 class PostForm(forms.ModelForm):

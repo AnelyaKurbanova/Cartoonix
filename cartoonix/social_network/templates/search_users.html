@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Cartoonix</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">Cartoonix</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2>Search Results for "{{ query }}"</h2>
+        {% if user_statuses %}
+            <ul class="list-group">
+                {% for status in user_statuses %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{% url 'profile_view' status.user.username %}" class="text-decoration-none">
+                            <i class="bi bi-person-circle"></i> {{ status.user.username }}
+                        </a>
+                        {% if status.is_friend %}
+                            <span class="badge bg-success">Friend</span>
+                        {% elif status.request_sent %}
+                            <span class="badge bg-warning">Request Sent</span>
+                        {% else %}
+                            <form id="friendRequestForm-{{ status.user.profile.id }}" class="friend-request-form" data-profile-id="{{ status.user.profile.id }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-sm">Add Friend</button>
+                            </form>
+
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No users found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const friendRequestForms = document.querySelectorAll('.friend-request-form');
+
+        friendRequestForms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const profileId = form.getAttribute('data-profile-id');
+                const url = `/social_network/send_friend_request/${profileId}/`;
+                const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                        form.innerHTML = '<span class="badge bg-warning">Request Sent</span>';
+                    } else {
+                        alert('An error occurred. Please try again.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    });
+</script>
+

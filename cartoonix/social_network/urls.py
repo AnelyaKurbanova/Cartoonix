@@ -29,6 +29,8 @@ urlpatterns = [
 
     path('profile/<str:username>/', fbv.profile_view, name='profile_view'),
     path('profile/friends/', fbv.list_friends, name='list_friends'),
+    path('search/', fbv.search_users, name='search_users'),
+
     path('api/profile/update/', fbv.profile_update_view, name='profile_update'),
     path('api/profile/delete/', fbv.delete_profile, name='delete_profile'),
     path('send_friend_request/<int:profile_id>/', fbv.send_friend_request, name='send_friend_request'),

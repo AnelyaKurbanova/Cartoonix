@@ -5,15 +5,23 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import render
+from django.http import JsonResponse
 from ai.models import VideoPrompt
 from ai.gpt import generate_photo_descriptions, generate_images_from_descriptions
 from ai.s3_utils import upload_image_to_s3, upload_video_to_s3
 from ai.serializers import VideoPromptSerializer
 from ai.nvidia import generate_video_from_images_with_nvidia
 from moviepy import VideoFileClip, concatenate_videoclips
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import render
 import base64
+import requests
+from moviepy import VideoFileClip, concatenate_videoclips
 import uuid
 import os
+from rest_framework.renderers import JSONRenderer
 
 logger = logging.getLogger('api_logger')  # Логгер для API
 
@@ -70,7 +78,6 @@ class GenerateVideo(APIView):
                 logger.error("Failed to generate videos with Nvidia.")
                 return Response({'error': 'Failed to generate videos with Nvidia'}, status=500)
 
-            # Step 5: Upload generated videos to S3
             s3_video_urls = []
             for video_b64 in video_b64s:
                 video_data = base64.b64decode(video_b64)
@@ -93,7 +100,6 @@ class GenerateVideo(APIView):
 
             merged_video = merge_videos(s3_video_urls)
 
-            # Step 7: Upload final video to S3
             with open(merged_video, "rb") as f:
                 video_data = f.read()
             final_video_url = upload_video_to_s3(video_data)
@@ -101,7 +107,6 @@ class GenerateVideo(APIView):
             os.remove(merged_video)
             logger.info(f"Final video uploaded to S3: {final_video_url}")
 
-            # Step 8: Save video prompt to database
             video_prompt = VideoPrompt.objects.create(
                 prompt=user_prompt,
                 arrTitles=descriptions,
@@ -130,7 +135,6 @@ class GenerateVideo(APIView):
         generatedVideos = VideoPrompt.objects.all()
         serializer = VideoPromptSerializer(generatedVideos, many=True)
         return render(request, 'ai/video_list.html', {'videos': serializer.data})
-
 
 class VideoDetail(APIView):
     @swagger_auto_schema(

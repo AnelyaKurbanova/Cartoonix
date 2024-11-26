@@ -169,44 +169,39 @@ function deleteProfile() {
 }
 
 function handleFriendRequest(requestId, action) {
-            let url = '';
+    const url = action === 'accept'
+        ? `{% url 'accept_friend_request' 0 %}`.replace('0', requestId)
+        : `{% url 'reject_friend_request' 0 %}`.replace('0', requestId);
 
-            if (action === 'accept') {
-                url = `{% url 'accept_friend_request' 0 %}`.replace('0', requestId); // Подставляем ID запроса
-            } else if (action === 'reject') {
-                url = `{% url 'reject_friend_request' 0 %}`.replace('0', requestId); // Подставляем ID запроса
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            document.getElementById(`friendRequest-${requestId}`).remove();
+
+            if (document.querySelectorAll('#friendRequestList li').length === 0) {
+                document.getElementById('friendRequestList').innerHTML = `
+                    <li class="list-group-item text-center">You have no friend requests.</li>`;
             }
 
-            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => {
-                if (response.ok) {
-                    // Удаляем запрос дружбы из списка
-                    const requestElement = document.getElementById(`friendRequest-${requestId}`);
-                    requestElement.remove();
-                    
-                    // Проверяем, остались ли еще запросы
-                    if (document.querySelectorAll('#friendRequestList li').length === 0) {
-                        document.getElementById('friendRequestList').innerHTML = '<li class="list-group-item text-center">You have no friend requests.</li>';
-                    }
-                    
-                    alert(`Friend request ${action === 'accept' ? 'accepted' : 'rejected'}.`);
-                } else {
-                    alert('Failed to process the friend request.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
+            alert(`Friend request ${action === 'accept' ? 'accepted' : 'rejected'}.`);
+        } else {
+            alert('Failed to process the friend request.');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
 
 
     </script>

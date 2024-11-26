@@ -3,11 +3,16 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
+from django.db.models import Q
+from django.views.decorators.http import require_POST
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import FriendRequest, Post, Comment, PostForm, Profile, ProfileForm
+from ..models import FriendRequest, Post, Comment, PostForm, Profile, ProfileForm, Notification
 from ..serializers import PostSerializer, CommentSerializer, UserRegisterSerializer, ProfileSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import render, get_object_or_404, redirect
@@ -19,6 +24,7 @@ from django.contrib.auth import logout
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.contrib.auth.models import User
 from ..forms import UserRegisterForm, ProfileUpdateForm, CommentForm, PostForm
 from django.views.decorators.csrf import csrf_exempt
@@ -26,6 +32,7 @@ import logging
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+from ..signals import friend_request_sent, friend_request_accepted, post_liked, comment_added
 
 logger = logging.getLogger('api_logger')
 
@@ -178,6 +185,9 @@ def like_post(request, post_id):
         logger.info(f"User {user} liked post {post_id}.")
         liked = True
 
+    if liked:
+        post_liked.send(sender=Post, post=post, user=request.user)
+
     data = {
         'liked': liked,
         'total_likes': post.total_likes(),
@@ -199,7 +209,6 @@ def register_user(request):
     else:
         form = UserCreationForm()
     return render(request, 'register.html', {'form': form})
-
 
 @login_required(login_url='/social_network/login/')
 def profile_update_view(request):
@@ -234,7 +243,6 @@ def post_detail(request, pk):
     logger.info(f"User {request.user} viewed post {pk}. Liked: {is_liked}")
     return render(request, 'posts/post_detail.html', {'post': post, 'is_liked': is_liked})
 
-
 @login_required
 def post_create(request):
     if request.method == 'POST':
@@ -250,7 +258,6 @@ def post_create(request):
     else:
         form = PostForm()
     return render(request, 'posts/create_post.html', {'form': form})
-
 
 @login_required
 def add_comment(request, pk):
@@ -268,6 +275,7 @@ def add_comment(request, pk):
             logger.warning(f"User {request.user.username} failed to add a comment. Errors: {form.errors}")
     else:
         form = CommentForm()
+    comment_added.send(sender=Comment, post=post, user=request.user, comment=form)
     return render(request, 'posts/create_comment.html', {'form': form})
 
 # @login_required
@@ -279,29 +287,20 @@ def add_comment(request, pk):
 #         Like.objects.create(post=post, user=request.user)
 #     return redirect('post_detail', pk=pk)
 
-# def register(request):
-#     if request.method == 'POST':
-#         form = UserRegisterForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-#             logger.info(f"User {user.username} registered successfully.")
-#             return redirect('login')
-#         else:
-#             logger.warning(f"Failed registration attempt. Errors: {form.errors}")
-#     else:
-#         form = UserRegisterForm()
-#     return render(request, 'social_network/register.html', {'form': form})
 
 
 @login_required
 def profile(request):
-    try:
-        user_profile = request.user.profile  # Получение профиля пользователя
-        logger.info(f"User {request.user.username} accessed their profile.")
-        return render(request, 'social_network/profile.html', {'user': request.user, 'profile': user_profile})
-    except Profile.DoesNotExist:
-        logger.error(f"Profile for user {request.user.username} does not exist.")
-        return render(request, 'social_network/profile.html', {'message': 'Profile does not exist.'})
+    if request.user.is_authenticated:
+        try:
+            user_profile = request.user.profile  # Получение профиля пользователя
+            logger.info(f"User {request.user.username} accessed their profile.")
+            return render(request, 'social_network/profile.html', {'user': request.user, 'profile': user_profile})
+        except Profile.DoesNotExist:
+            logger.error(f"Profile for user {request.user.username} does not exist.")
+            return render(request, 'social_network/profile.html', {'message': 'Profile does not exist.'})
+    else:
+        return render(request, 'social_network/profile.html', {'message': 'Please log in to see your profile.'})
 
 
 @login_required
@@ -325,12 +324,12 @@ def update_profile(request):
 def delete_profile(request):
     try:
         profile = Profile.objects.get(user=request.user)
+        user = request.user
     except Profile.DoesNotExist:
         logger.error(f"Profile for user {request.user.username} not found.")
         return JsonResponse({"message": "Profile not found"}, status=404)
 
     if request.method == 'DELETE':
-        user = request.user
         profile.delete()
         user.delete()
         logger.info(f"User {user.username} and their profile have been deleted.")
@@ -344,6 +343,7 @@ def delete_profile(request):
     responses={201: "Friend request sent successfully", 400: "Bad Request"},
     operation_description="Send a friend request to another user."
 )
+@csrf_exempt
 @api_view(['POST'])
 @login_required
 def send_friend_request(request, profile_id):
@@ -359,6 +359,10 @@ def send_friend_request(request, profile_id):
 
         friend_request = FriendRequest(from_user=request.user, to_user=to_user_profile.user)
         friend_request.save()
+
+        friend_request_sent.send(sender=FriendRequest, from_user=request.user, to_user=to_user_profile.user)
+
+        return Response({"message": "Friend request sent successfully"}, status=status.HTTP_201_CREATED)
         return JsonResponse({"message": "Friend request sent successfully"}, status=201)
     except Profile.DoesNotExist:
         return JsonResponse({"message": "Profile not found"}, status=404)
@@ -380,10 +384,12 @@ def accept_friend_request(request, request_id):
         friend_request = FriendRequest.objects.get(pk=request_id, to_user=request.user)
         from_user = friend_request.from_user
 
-        # Добавляем друзей
         request.user.profile.friends.add(from_user.profile)
         from_user.profile.friends.add(request.user.profile)
 
+        friend_request_accepted.send(sender=FriendRequest, from_user=from_user, to_user=request.user)
+
+        # Удаляем запрос дружбы
         friend_request.delete()
 
         logger.info(f"User {request.user.username} and {from_user.username} are now friends.")
@@ -408,7 +414,6 @@ def reject_friend_request(request, request_id):
 
         # Находим заявку на добавление в друзья
         friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user)
-
         friend_request.delete()
 
         logger.info(f"User {request.user.username} rejected a friend request with ID {request_id}.")
@@ -447,7 +452,6 @@ def remove_friend(request, profile_id):
     except Profile.DoesNotExist:
         logger.error(f"Profile with ID {profile_id} not found while attempting to remove friend.")
         return JsonResponse({"message": "Profile not found"}, status=404)
-
 
 
 @login_required
@@ -528,7 +532,6 @@ def logout_view(request):
     logout(request)
     return redirect('login_page')
 
-
 @login_required(login_url='/social_network/login/')
 def create_post(request):
     if request.method == 'POST':
@@ -547,7 +550,6 @@ def create_post(request):
         form = PostForm()
 
     return render(request, 'create_post.html', {'form': form})
-
 
 @login_required(login_url='/social_network/login/')
 def profile_view(request, username):
@@ -590,7 +592,6 @@ def edit_post(request, post_id):
 
     logger.info(f"User {request.user.username} accessed the edit page for post {post_id}.")
     return render(request, 'edit_post.html', {'form': form, 'post': post})
-
 
 @login_required(login_url='/social_network/login/')
 def delete_post(request, post_id):
@@ -784,4 +785,121 @@ def delete_post(request, post_id):
 #     user_profile = request.user.profile
 #     serializer = ProfileSerializer(user_profile)
 #     return Response(serializer.data['friends'])
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Retrieve unread notifications for the authenticated user.",
+    responses={
+        200: openapi.Response(
+            description="List of unread notifications.",
+            examples={
+                "application/json": {
+                    "notifications": [
+                        {
+                            "id": 1,
+                            "actor": "john_doe",
+                            "verb": "sent you a friend request",
+                            "timestamp": "2024-11-26 12:34:56",
+                        },
+                    ]
+                }
+            }
+        ),
+        401: openapi.Response(description="Unauthorized"),
+    },
+    security=[{'Token': []}],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@login_required
+def get_notifications(request):
+    """
+        Retrieve unread notifications for the authenticated user.
+
+        Returns a list of unread notifications with details.
+    """
+    notifications = request.user.notifications.filter(read=False)
+    data = {
+        'notifications': [
+            {
+                'id': n.id,
+                'actor': n.actor.username,
+                'verb': n.verb,
+                'target': str(n.target) if n.target else None,
+                'timestamp': n.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            }
+            for n in notifications
+        ]
+    }
+    logger.info(f"User {request.user.username} retrieved notifications.")
+    return JsonResponse(data)
+
+
+notification_id_param = openapi.Parameter(
+    'notification_id',
+    openapi.IN_PATH,
+    description="ID of the notification to mark as read",
+    type=openapi.TYPE_INTEGER,
+)
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_description="Mark a specific notification as read.",
+    responses={
+        200: openapi.Response(
+            description="Notification marked as read.",
+            examples={"application/json": {"success": True}}
+        ),
+        404: openapi.Response(
+            description="Notification not found.",
+            examples={"application/json": {"success": False}}
+        ),
+        401: openapi.Response(description="Unauthorized"),
+    },
+    manual_parameters=[notification_id_param],
+    security=[{'Token': []}],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@login_required
+@require_POST
+def mark_notification_as_read(request, notification_id):
+    """
+        Mark a specific notification as read.
+
+        Parameters:
+        - notification_id (int): ID of the notification to mark as read.
+
+        Returns a success message if the operation was successful.
+    """
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.read = True
+        notification.save()
+        logger.info(f"Notification {notification_id} marked as read by user {request.user.username}.")
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        logger.warning(f"Notification {notification_id} not found for user {request.user.username}.")
+        return JsonResponse({'success': False}, status=404)
+
+
+@login_required
+def search_users(request):
+    query = request.GET.get('q', '')
+    users = User.objects.filter(Q(username__icontains=query) | Q(profile__bio__icontains=query)).exclude(id=request.user.id)
+
+    user_statuses = []
+    for user in users:
+        status = {
+            'user': user,
+            'is_friend': user.profile in request.user.profile.friends.all(),
+            'request_sent': FriendRequest.objects.filter(from_user=request.user, to_user=user).exists()
+        }
+        user_statuses.append(status)
+
+    return render(request, 'search_users.html', {
+        'query': query,
+        'user_statuses': user_statuses
+    })
 
