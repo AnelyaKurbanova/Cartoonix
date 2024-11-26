@@ -31,33 +31,16 @@ urlpatterns = [
     path('profile/friends/', fbv.list_friends, name='list_friends'),
     path('api/profile/update/', fbv.profile_update_view, name='profile_update'),
     path('api/profile/delete/', fbv.delete_profile, name='delete_profile'),
-    path('friend_requests/', fbv.view_friend_requests, name='view_friend_requests'),
     path('send_friend_request/<int:profile_id>/', fbv.send_friend_request, name='send_friend_request'),
     path('accept_friend_request/<int:request_id>/', fbv.accept_friend_request, name='accept_friend_request'),
     path('reject_friend_request/<int:request_id>/', fbv.reject_friend_request, name='reject_friend_request'),
     path('api/profile/friends/remove/<int:profile_id>/', fbv.remove_friend, name='remove_friend'),
     path('api/profile/friends/', fbv.list_friends, name='list_friends'),
-    
+    path('api/friends/', fbv.search_friends, name='search_friends'),
+
 
     path('login/', fbv.login_page, name='login_page'),
     path('logout/', fbv.logout_view, name='logout'),
 
 ]
-
-#     path('', fbv.post_list, name='post_list'),
-#     path('post/<int:pk>/', fbv.post_detail, name='post_detail'),
-#     path('post/new/', fbv.post_create, name='post_create'),
-#     path('post/<int:pk>/comment/', fbv.add_comment, name='add_comment'),
-#     path('post/<int:pk>/like/', fbv.like_post, name='like_post'),
-#     path('register/', fbv.register, name='register'),
-#     path('login/', auth_views.LoginView.as_view(template_name='social_network/login.html'), name='login'),
-#     path('logout/', auth_views.LogoutView.as_view(template_name='social_network/logout.html'), name='logout'),
-#     path('profile/', fbv.profile, name='profile'),
-#     path('profile/update/', fbv.update_profile, name='update_profile'),
-#     path('profile/delete/', fbv.delete_profile, name='delete_profile'),
-#     path('friends/add/<int:user_id>/', fbv.add_friend, name='add_friend'),
-#     path('friends/remove/<int:user_id>/', fbv.remove_friend, name='remove_friend'),
-#     path('friends/', fbv.friends_list, name='friends_list'),
-# ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 

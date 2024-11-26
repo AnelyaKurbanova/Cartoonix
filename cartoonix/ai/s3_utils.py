@@ -30,20 +30,15 @@ def upload_to_s3(file_data, original_file_name, folder=''):
     :return: URL of the uploaded file
     """
     try:
-        # Get the current timestamp
         timestamp = int(time.time())
 
-        # Extract the file extension from the original file name
         file_extension = os.path.splitext(original_file_name)[1]
 
-        # Create a unique file name using the timestamp
         unique_file_name = f"{timestamp}{file_extension}"
 
-        # Combine folder and unique file name to create the full S3 path
         folder_prefix = f"{folder}/" if folder else ""
         s3_path = f"{folder_prefix}{unique_file_name}"
 
-        # Upload the file object to S3
         s3.upload_fileobj(
             BytesIO(file_data),
             AWS_STORAGE_BUCKET_NAME,
@@ -51,7 +46,6 @@ def upload_to_s3(file_data, original_file_name, folder=''):
             ExtraArgs={'ACL': 'public-read'}
         )
 
-        # Construct the full URL to the uploaded file
         s3_url = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{s3_path}"
         return s3_url
     except Exception as e:
@@ -78,19 +72,11 @@ def upload_image_to_s3(image_url, folder='images'):
         return None
 
 
-def upload_video_to_s3(video_url, folder='videos'):
-    """
-    Upload a video to S3 by URL.
-
-    :param video_url: URL of the video to upload
-    :param folder: Folder in S3 to upload the videos to (default 'videos')
-    :return: URL of the uploaded video
-    """
+def upload_video_to_s3(video_data, folder='videos'):
+    """ Upload a video to S3 by base64 string. """
     try:
-        response = requests.get(video_url)
-        response.raise_for_status()
-        video_data = response.content
-        file_name = os.path.basename(video_url)
+        file_name = f"video_{int(time.time())}.mp4"
+        
         return upload_to_s3(video_data, file_name, folder=folder)
     except Exception as e:
         print(f"Error uploading video to S3: {e}")

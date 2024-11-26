@@ -2,15 +2,16 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from ai.models import VideoPrompt
-from .models import Post, Comment, Like, Profile
+from .models import Post, Comment, Profile
 from rest_framework import serializers
 from .models import Post
 
 
 class VideoPromptSerializer(serializers.ModelSerializer):
     class Meta:
+        ref_name = "SocialNetwork_VideoPrompt"
         model = VideoPrompt
-        fields = ['id', 'prompt_text']  # Укажите необходимые поля
+        fields = '__all__'
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -56,12 +57,6 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'content', 'created_at', 'author', 'post']
         read_only_fields = ['author', 'post', 'created_at']
-
-class LikeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Like
-        fields = ['id', 'user', 'post', 'created_at']
-        read_only_fields = ['user', 'post', 'created_at']
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
