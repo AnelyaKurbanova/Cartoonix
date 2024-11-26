@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Dashboard - User Post Analytics</h1>
+
+<h2>General Metrics</h2>
+<ul>
+    <li>Total Posts: {{ total_posts }}</li>
+    <li>Average Likes per Post: {{ avg_likes|floatformat:2 }}</li>
+    <li>Average Comments per Post: {{ avg_comments|floatformat:2 }}</li>
+</ul>
+
+<h2>Top Posts</h2>
+<ul>
+    {% for post in top_posts %}
+    <li>
+        <strong>{{ post.title }}</strong> - Likes: {{ post.likes.count }}, Comments: {{ post.comments.count }}
+    </li>
+    {% endfor %}
+</ul>
+
+<h2>Top Categories (Bar Chart)</h2>
+<img src="data:image/png;base64,{{ bar_chart }}" alt="Bar Chart">
+
+<h2>Distribution of Interactions by Categories (Pie Chart)</h2>
+<img src="data:image/png;base64,{{ pie_chart }}" alt="Pie Chart">
+
+{% endblock %}

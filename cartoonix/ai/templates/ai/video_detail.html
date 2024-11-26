@@ -1,0 +1,21 @@
+{% extends 'ai/base.html' %}
+
+{% block title %}Generated Videos{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Generated Videos</h1>
+    <div class="row">
+        {% for video in videos %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Prompt: {{ video.prompt }}</h5>
+                        <p class="card-text">Titles: {{ video.arrTitles | join:", " }}</p>
+                        <a href="{% url 'video_detail' video.id %}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
