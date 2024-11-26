@@ -36,7 +36,8 @@ urlpatterns = [
     path('reject_friend_request/<int:request_id>/', fbv.reject_friend_request, name='reject_friend_request'),
     path('api/profile/friends/remove/<int:profile_id>/', fbv.remove_friend, name='remove_friend'),
     path('api/profile/friends/', fbv.list_friends, name='list_friends'),
-    
+    path('api/friends/', fbv.search_friends, name='search_friends'),
+
 
     path('login/', fbv.login_page, name='login_page'),
     path('logout/', fbv.logout_view, name='logout'),
