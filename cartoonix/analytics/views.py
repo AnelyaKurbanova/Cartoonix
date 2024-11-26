@@ -1,7 +1,6 @@
 import logging
 import matplotlib
-matplotlib.use('Agg')  # Используйте бэкэнд без GUI
-
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -9,7 +8,7 @@ from django.shortcuts import render
 from django.db.models import Count, Avg
 from social_network.models import Post
 
-logger = logging.getLogger('dashboard_logger')  # Логгер для дашборда
+logger = logging.getLogger('dashboard_logger')
 
 
 def generate_bar_chart(chart_data):
@@ -62,11 +61,10 @@ def generate_pie_chart(pie_data):
 
 
 def dashboard(request):
-    user = request.user  # Получаем текущего пользователя
+    user = request.user
     logger.info(f"Dashboard accessed by user {user.username}.")
 
     try:
-        # Получаем все посты, созданные текущим пользователем
         posts = Post.objects.filter(author=user).annotate(
             num_likes=Count('likes'),
             num_comments=Count('comments')
@@ -78,21 +76,18 @@ def dashboard(request):
 
         logger.info(f"Total posts: {total_posts}, Avg likes: {avg_likes}, Avg comments: {avg_comments}")
 
-        # Аналитика по категориям (Пример данных)
         chart_data = [
             {'category': 'Comedy', 'likes': 50, 'comments': 30},
             {'category': 'Drama', 'likes': 40, 'comments': 10},
             {'category': 'Horror', 'likes': 70, 'comments': 20},
         ]
 
-        # Аналитика по круговой диаграмме
         pie_data = [
             {'category': 'Comedy', 'interactions': 80},
             {'category': 'Drama', 'interactions': 50},
             {'category': 'Horror', 'interactions': 90},
         ]
 
-        # Генерация графиков
         bar_chart = generate_bar_chart(chart_data)
         pie_chart = generate_pie_chart(pie_data)
 
@@ -105,7 +100,7 @@ def dashboard(request):
             'avg_comments': avg_comments,
             'bar_chart': bar_chart,
             'pie_chart': pie_chart,
-            'top_posts': posts.order_by('-num_likes')[:5],  # Топовые посты по лайкам
+            'top_posts': posts.order_by('-num_likes')[:5],
         }
 
         logger.info(f"Dashboard data prepared for user {user.username}.")

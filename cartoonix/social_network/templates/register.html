@@ -42,7 +42,6 @@
                             {% for field in form %}
                                 <div class="mb-3">
                                     <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                    <!-- Отображение поля с ручным добавлением класса -->
                                     <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-control" value="{{ field.value|default_if_none:'' }}">
                                     {% if field.help_text %}
                                         <small class="form-text text-muted">{{ field.help_text }}</small>

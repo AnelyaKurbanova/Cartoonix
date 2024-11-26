@@ -53,8 +53,7 @@
 
                                 <a href="{{ video.finalVideo }}" download="GeneratedVideo.mp4" class="btn btn-success mt-2 mb-3">Download Video</a>
                             </div>
-                            
-                            <!-- Carousel to display images -->
+
                             <div id="carousel{{ video.id }}" class="carousel slide mb-3" data-bs-ride="carousel">
                                 <div class="carousel-inner">
                                     {% for image in video.arrImages %}
@@ -72,16 +71,6 @@
                                     <span class="visually-hidden">Next</span>
                                 </button>
                             </div>
-
-                            <!-- Videos list -->
-                            <!-- <div class="videos">
-                                {% for video_url in video.arrVideos %}
-                                    <video class="w-100" controls>
-                                        <source src="{{ video_url }}" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                    </video>
-                                {% endfor %}
-                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -116,9 +105,8 @@
     })
     .then(data => {
         alert('Video generated successfully!');
-        console.log(data); // Вывод данных для отладки
+        console.log(data);
         location.reload();
-        // Здесь вы можете обновить DOM или список видео
     })
     .catch(error => {
         console.error('Error:', error);

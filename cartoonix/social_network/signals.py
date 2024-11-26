@@ -6,7 +6,6 @@ friend_request_accepted = Signal()
 post_liked = Signal()
 comment_added = Signal()
 
-
 @receiver(friend_request_sent)
 def handle_friend_request_sent(sender, from_user, to_user, **kwargs):
     create_notification.delay(

@@ -1,29 +1,21 @@
 import logging
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import render
-from django.http import JsonResponse
 from ai.models import VideoPrompt
 from ai.gpt import generate_photo_descriptions, generate_images_from_descriptions
 from ai.s3_utils import upload_image_to_s3, upload_video_to_s3
 from ai.serializers import VideoPromptSerializer
 from ai.nvidia import generate_video_from_images_with_nvidia
-from moviepy import VideoFileClip, concatenate_videoclips
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import render
 import base64
-import requests
 from moviepy import VideoFileClip, concatenate_videoclips
 import uuid
 import os
-from rest_framework.renderers import JSONRenderer
 
-logger = logging.getLogger('api_logger')  # Логгер для API
+logger = logging.getLogger('api_logger')
 
 class GenerateVideo(APIView):
     @swagger_auto_schema(
@@ -52,19 +44,16 @@ class GenerateVideo(APIView):
 
             logger.info(f"Generating video for prompt: {user_prompt}")
 
-            # Step 1: Generate descriptions
             descriptions = generate_photo_descriptions(user_prompt)
             if not descriptions:
                 logger.error("Failed to generate descriptions.")
                 return Response({'error': 'Failed to generate descriptions'}, status=500)
 
-            # Step 2: Generate images
             image_urls = generate_images_from_descriptions(descriptions)
             if not image_urls:
                 logger.error("Failed to generate images.")
                 return Response({'error': 'Failed to generate images'}, status=500)
 
-            # Step 3: Upload images to S3
             s3_urls = [upload_image_to_s3(image) for image in image_urls if upload_image_to_s3(image)]
             if not s3_urls:
                 logger.error("Failed to upload images to S3.")
@@ -72,7 +61,6 @@ class GenerateVideo(APIView):
 
             logger.info(f"Uploaded images to S3: {s3_urls}")
 
-            # Step 4: Generate video from images
             video_b64s = generate_video_from_images_with_nvidia(s3_urls)
             if not video_b64s:
                 logger.error("Failed to generate videos with Nvidia.")
@@ -87,7 +75,6 @@ class GenerateVideo(APIView):
 
             logger.info(f"Uploaded videos to S3: {s3_video_urls}")
 
-            # Step 6: Merge videos
             def merge_videos(video_urls):
                 output_file = f"{uuid.uuid4()}.mp4"
                 clips = [VideoFileClip(url) for url in video_urls]

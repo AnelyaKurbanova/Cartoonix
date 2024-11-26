@@ -3,16 +3,12 @@ from django.contrib.auth.models import User, AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from PIL import Image
 from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils import timezone
 from ai.models import VideoPrompt
 from django import forms
 from django.dispatch import receiver
 
-
-logger = logging.getLogger('model_logger')  # Логгер для моделей
+logger = logging.getLogger('model_logger')
 
 class Post(models.Model):
     title = models.CharField(max_length=255)
