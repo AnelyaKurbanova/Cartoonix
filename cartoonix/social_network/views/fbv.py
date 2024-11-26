@@ -23,6 +23,8 @@ from django.contrib.auth.models import User
 from ..forms import UserRegisterForm, ProfileUpdateForm, CommentForm, PostForm
 from django.views.decorators.csrf import csrf_exempt
 import logging
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 def login_page(request):
@@ -42,8 +44,18 @@ def login_page(request):
 
 
 
-
-
+@swagger_auto_schema(
+    method='get',
+    responses={200: PostSerializer(many=True)},
+    operation_description="Retrieve a list of posts."
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=PostSerializer,
+    responses={201: PostSerializer, 400: "Bad Request"},
+    operation_description="Create a new post."
+)
+@api_view(['GET', 'POST'])
 def post_list(request):
 
     if request.method == 'GET':
@@ -58,7 +70,22 @@ def post_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@swagger_auto_schema(
+    method='get',
+    responses={200: PostSerializer, 404: "Not Found"},
+    operation_description="Retrieve a specific post by id."
+)
+@swagger_auto_schema(
+    method='put',
+    request_body=PostSerializer,
+    responses={200: PostSerializer, 400: "Bad Request", 403: "Forbidden"},
+    operation_description="Update an existing post."
+)
+@swagger_auto_schema(
+    method='delete',
+    responses={204: "No Content", 403: "Forbidden"},
+    operation_description="Delete a post by id."
+)
 @api_view(['GET', 'PUT', 'DELETE'])
 def post_detail(request, post_id):
     try:
@@ -85,6 +112,17 @@ def post_detail(request, post_id):
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+@swagger_auto_schema(
+    method='get',
+    responses={200: CommentSerializer(many=True), 404: "Not Found"},
+    operation_description="Retrieve comments for a specific post."
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=CommentSerializer,
+    responses={201: CommentSerializer, 400: "Bad Request"},
+    operation_description="Add a comment to a post."
+)
 
 @api_view(['GET', 'POST'])
 def comment_list(request, post_id):
@@ -266,7 +304,11 @@ def delete_profile(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-
+@swagger_auto_schema(
+    method='post',
+    responses={201: "Friend request sent successfully", 400: "Bad Request"},
+    operation_description="Send a friend request to another user."
+)
 @api_view(['POST'])
 def send_friend_request(request, profile_id):
     try:
@@ -289,6 +331,11 @@ def send_friend_request(request, profile_id):
     except Profile.DoesNotExist:
         return Response({"message": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
+@swagger_auto_schema(
+    method='post',
+    responses={200: "Friend request accepted", 404: "Not Found"},
+    operation_description="Accept a received friend request."
+)
 @api_view(['POST'])
 def accept_friend_request(request, request_id):
     try:
@@ -306,6 +353,11 @@ def accept_friend_request(request, request_id):
     except FriendRequest.DoesNotExist:
         return JsonResponse({'error': 'Friend request does not exist'}, status=404)
     
+@swagger_auto_schema(
+    method='post',
+    responses={200: "Friend request rejected", 404: "Not Found"},
+    operation_description="Reject a received friend request."
+)
 @api_view(['POST'])
 def reject_friend_request(request, request_id):
     try:
@@ -315,7 +367,11 @@ def reject_friend_request(request, request_id):
     except FriendRequest.DoesNotExist:
         return Response({"message": "Friend request not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@swagger_auto_schema(
+    method='delete',
+    responses={200: "Friend removed successfully", 400: "Bad Request", 404: "Not Found"},
+    operation_description="Remove a user from friends."
+)
 @api_view(['DELETE'])
 @login_required
 def remove_friend(request, profile_id):

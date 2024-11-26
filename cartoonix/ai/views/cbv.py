@@ -1,21 +1,38 @@
-from django.http import JsonResponse
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import render
 from ai.models import VideoPrompt
 from ai.gpt import generate_photo_descriptions, generate_images_from_descriptions
 from ai.s3_utils import upload_image_to_s3, upload_video_to_s3
 from ai.serializers import VideoPromptSerializer
 from ai.nvidia import generate_video_from_images_with_nvidia
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status 
-from django.shortcuts import render
+from moviepy import VideoFileClip, concatenate_videoclips
 import base64
-import requests
-from moviepy.editor import VideoFileClip, concatenate_videoclips
 import uuid
 import os
-from rest_framework.renderers import JSONRenderer
 
 class GenerateVideo(APIView):
+    @swagger_auto_schema(
+        operation_summary="Generate video from user prompt",
+        operation_description="This endpoint generates a video based on the given user prompt. "
+                               "It includes steps like generating descriptions, images, and videos, "
+                               "merging them, and uploading to S3.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'prompt': openapi.Schema(type=openapi.TYPE_STRING, description="User's prompt to generate the video")
+            },
+            required=['prompt']
+        ),
+        responses={
+            201: VideoPromptSerializer,
+            400: "Bad Request: Prompt is missing or invalid",
+            500: "Internal Server Error"
+        }
+    )
     def post(self, request):
         try:
             # Получение prompt из данных запроса
@@ -35,7 +52,6 @@ class GenerateVideo(APIView):
 
             # Загрузка изображений в S3
             s3_urls = [upload_image_to_s3(image) for image in image_urls if upload_image_to_s3(image)]
-
             if not s3_urls:
                 return Response({'error': 'Failed to upload images to S3'}, status=500)
 
@@ -65,8 +81,6 @@ class GenerateVideo(APIView):
 
             merged_video = merge_videos(s3_video_urls)
 
-
-
             # Загрузка объединённого видео в S3
             with open(merged_video, "rb") as f:
                 video_data = f.read()
@@ -90,35 +104,67 @@ class GenerateVideo(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-    
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve all generated videos",
+        operation_description="Returns a list of all video prompts with their associated data.",
+        responses={
+            200: VideoPromptSerializer(many=True),
+        }
+    )
     def get(self, request):
         generatedVideos = VideoPrompt.objects.all()
         serializer = VideoPromptSerializer(generatedVideos, many=True)
-        # return Response(serializer.data)
         return render(request, 'ai/video_list.html', {'videos': serializer.data})
-    
+
+
 class VideoDetail(APIView):
-    def get_object(self, pk):
+    @swagger_auto_schema(
+        operation_summary="Retrieve a single video by ID",
+        responses={
+            200: VideoPromptSerializer,
+            404: "Not Found"
+        }
+    )
+    def get(self, request, pk):
         try:
             video = VideoPrompt.objects.get(id=pk)
-            return video
-        except VideoPrompt.DoesNotExist as e:
-            return Response({'error': str(e)})
-        
-    def get(self, request, pk):
-        video = self.get_object(pk)
-        serializer = VideoPromptSerializer(video)
-        return Response(serializer.data)
-    
-    def put(self, request, pk):
-        video = self.get_object(pk)
-        serializer = VideoPromptSerializer(video, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+            serializer = VideoPromptSerializer(video)
             return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-    
+        except VideoPrompt.DoesNotExist:
+            return Response({'error': 'Video not found'}, status=404)
+
+    @swagger_auto_schema(
+        operation_summary="Update a video by ID",
+        request_body=VideoPromptSerializer,
+        responses={
+            200: VideoPromptSerializer,
+            400: "Bad Request",
+            404: "Not Found"
+        }
+    )
+    def put(self, request, pk):
+        try:
+            video = VideoPrompt.objects.get(id=pk)
+            serializer = VideoPromptSerializer(video, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+        except VideoPrompt.DoesNotExist:
+            return Response({'error': 'Video not found'}, status=404)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a video by ID",
+        responses={
+            204: "No Content",
+            404: "Not Found"
+        }
+    )
     def delete(self, request, pk=None):
-        video = self.get_object(pk)
-        video.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            video = VideoPrompt.objects.get(id=pk)
+            video.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except VideoPrompt.DoesNotExist:
+            return Response({'error': 'Video not found'}, status=404)
