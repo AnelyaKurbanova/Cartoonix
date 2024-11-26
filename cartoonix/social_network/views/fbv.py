@@ -42,6 +42,7 @@ def login_page(request):
     return render(request, 'login.html')
 
 
+@api_view(['GET', 'POST'])
 def post_list(request):
     if request.method == 'GET':
         posts = Post.objects.all()
@@ -236,18 +237,18 @@ def add_comment(request, pk):
 #         Like.objects.create(post=post, user=request.user)
 #     return redirect('post_detail', pk=pk)
 
-def register(request):
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            logger.info(f"User {user.username} registered successfully.")
-            return redirect('login')
-        else:
-            logger.warning(f"Failed registration attempt. Errors: {form.errors}")
-    else:
-        form = UserRegisterForm()
-    return render(request, 'social_network/register.html', {'form': form})
+# def register(request):
+#     if request.method == 'POST':
+#         form = UserRegisterForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             logger.info(f"User {user.username} registered successfully.")
+#             return redirect('login')
+#         else:
+#             logger.warning(f"Failed registration attempt. Errors: {form.errors}")
+#     else:
+#         form = UserRegisterForm()
+#     return render(request, 'social_network/register.html', {'form': form})
 
 
 @login_required
