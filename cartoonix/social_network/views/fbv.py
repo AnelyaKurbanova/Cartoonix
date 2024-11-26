@@ -23,6 +23,8 @@ from django.contrib.auth.models import User
 from ..forms import UserRegisterForm, ProfileUpdateForm, CommentForm, PostForm
 from django.views.decorators.csrf import csrf_exempt
 import logging
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 logger = logging.getLogger('api_logger')
@@ -42,7 +44,21 @@ def login_page(request):
     return render(request, 'login.html')
 
 
+
+@swagger_auto_schema(
+    method='get',
+    responses={200: PostSerializer(many=True)},
+    operation_description="Retrieve a list of posts."
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=PostSerializer,
+    responses={201: PostSerializer, 400: "Bad Request"},
+    operation_description="Create a new post."
+)
 @api_view(['GET', 'POST'])
+
+
 def post_list(request):
     if request.method == 'GET':
         posts = Post.objects.all()
@@ -59,7 +75,22 @@ def post_list(request):
         logger.error(f"User {request.user} failed to create a post. Errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@swagger_auto_schema(
+    method='get',
+    responses={200: PostSerializer, 404: "Not Found"},
+    operation_description="Retrieve a specific post by id."
+)
+@swagger_auto_schema(
+    method='put',
+    request_body=PostSerializer,
+    responses={200: PostSerializer, 400: "Bad Request", 403: "Forbidden"},
+    operation_description="Update an existing post."
+)
+@swagger_auto_schema(
+    method='delete',
+    responses={204: "No Content", 403: "Forbidden"},
+    operation_description="Delete a post by id."
+)
 @api_view(['GET', 'PUT', 'DELETE'])
 def post_detail(request, post_id):
     try:
@@ -93,6 +124,17 @@ def post_detail(request, post_id):
         logger.info(f"User {request.user} deleted post {post_id}.")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+@swagger_auto_schema(
+    method='get',
+    responses={200: CommentSerializer(many=True), 404: "Not Found"},
+    operation_description="Retrieve comments for a specific post."
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=CommentSerializer,
+    responses={201: CommentSerializer, 400: "Bad Request"},
+    operation_description="Add a comment to a post."
+)
 
 @api_view(['GET', 'POST'])
 def comment_list(request, post_id):
@@ -297,7 +339,11 @@ def delete_profile(request):
     logger.warning(f"User {request.user.username} attempted an invalid method on profile deletion.")
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-
+@swagger_auto_schema(
+    method='post',
+    responses={201: "Friend request sent successfully", 400: "Bad Request"},
+    operation_description="Send a friend request to another user."
+)
 @api_view(['POST'])
 @login_required
 def send_friend_request(request, profile_id):
@@ -319,6 +365,11 @@ def send_friend_request(request, profile_id):
 
 
 
+@swagger_auto_schema(
+    method='post',
+    responses={200: "Friend request accepted", 404: "Not Found"},
+    operation_description="Accept a received friend request."
+)
 @api_view(['POST'])
 @login_required
 def accept_friend_request(request, request_id):
@@ -343,6 +394,12 @@ def accept_friend_request(request, request_id):
         logger.error(f"Friend request with ID {request_id} not found for user {request.user.username}.")
         return JsonResponse({'error': 'Friend request does not exist'}, status=404)
 
+@swagger_auto_schema(
+    method='post',
+    responses={200: "Friend request rejected", 404: "Not Found"},
+    operation_description="Reject a received friend request."
+)
+
 @api_view(['POST'])
 @login_required
 def reject_friend_request(request, request_id):
@@ -361,7 +418,11 @@ def reject_friend_request(request, request_id):
         logger.error(f"Friend request with ID {request_id} not found for user {request.user.username}.")
         return JsonResponse({"message": "Friend request not found"}, status=404)
 
-
+@swagger_auto_schema(
+    method='delete',
+    responses={200: "Friend removed successfully", 400: "Bad Request", 404: "Not Found"},
+    operation_description="Remove a user from friends."
+)
 @api_view(['DELETE'])
 @login_required
 def remove_friend(request, profile_id):
