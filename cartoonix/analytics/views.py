@@ -6,7 +6,7 @@ import io
 import base64
 from django.shortcuts import render
 from django.db.models import Count, Avg
-from social_network.models import Post, Like, Comment
+from social_network.models import Post
 
 def generate_bar_chart(chart_data):
     categories = [item['category'] for item in chart_data]

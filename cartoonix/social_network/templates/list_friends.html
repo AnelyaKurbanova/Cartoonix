@@ -20,6 +20,12 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">Cartoonix</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'profile_view' request.user.username %}">My Profile</a>
+                <a class="nav-link" href="{% url 'list_friends' %}">View Friends</a>
+                <a class="nav-link" href="{% url 'generate_video' %}">Generate Video</a>
+                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            </div>
         </div>
     </nav>
 
@@ -31,6 +37,8 @@
                         <h2 class="card-title text-center mb-4">
                             <i class="bi bi-people-fill"></i> Your Friends
                         </h2>
+                        <!-- Скрытое поле для CSRF токена -->
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                         <ul class="list-group" id="friendsList">
                             {% for friend in friends %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center" id="friend-{{ friend.pk }}">
@@ -61,22 +69,34 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function removeFriend(friendId) {
-            if (confirm('Are you sure you want to remove this friend?')) {
-                const csrfToken = '{{ csrf_token }}'; // Используем CSRF токен
+            // Формируем URL для удаления друга
+            const url = `{% url 'remove_friend' 0 %}`.replace('0', friendId);
 
-                fetch(`/social_network/api/profile/friends/remove/${friendId}/`, {
+            // Получаем CSRF токен из скрытого поля
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            // Проверяем, что CSRF токен существует
+            if (!csrfToken) {
+                alert('CSRF token not found. Please refresh the page and try again.');
+                return;
+            }
+
+            // Подтверждение удаления
+            if (confirm('Are you sure you want to remove this friend?')) {
+                fetch(url, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': csrfToken,
                         'Content-Type': 'application/json',
-                    }
+                    },
                 })
                 .then(response => {
                     if (response.ok) {
+                        // Удаляем элемент друга из списка
                         const friendElement = document.getElementById(`friend-${friendId}`);
                         friendElement.remove();
                         
-                        // Проверяем, остались ли еще друзья
+                        // Проверяем, остались ли друзья
                         if (document.querySelectorAll('#friendsList li').length === 0) {
                             document.getElementById('friendsList').innerHTML = '<li class="list-group-item text-center">You have no friends yet.</li>';
                         }

@@ -9,16 +9,13 @@ from django import forms
 from django.dispatch import receiver
 
 
-
-# from ai.models import VideoPrompt
-
-
 class Post(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default_post.jpg', upload_to='post_pics')
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
 
 
 
@@ -51,23 +48,13 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ['content']
 
-class Like(models.Model):
-    post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name='likes', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('post', 'user')
-
-    def __str__(self):
-        return f"Like by {self.user} on {self.post}"
-
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True, null=True)
-    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
     friends = models.ManyToManyField('self', symmetrical=False, related_name='user_friends', blank=True)
+    image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+
 
     def __str__(self):
         return f'{self.user.username} Profile'
