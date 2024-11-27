@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class VideoPrompt(models.Model):
     CATEGORY_CHOICES = [
         ('comedy', 'Comedy'),

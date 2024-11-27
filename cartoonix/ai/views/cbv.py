@@ -17,6 +17,7 @@ import os
 
 logger = logging.getLogger('api_logger')
 
+
 class GenerateVideo(APIView):
     @swagger_auto_schema(
         operation_summary="Generate video from user prompt",
@@ -122,6 +123,7 @@ class GenerateVideo(APIView):
         generatedVideos = VideoPrompt.objects.all()
         serializer = VideoPromptSerializer(generatedVideos, many=True)
         return render(request, 'ai/video_list.html', {'videos': serializer.data})
+
 
 class VideoDetail(APIView):
     @swagger_auto_schema(

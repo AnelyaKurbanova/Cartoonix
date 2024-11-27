@@ -1,8 +1,9 @@
-import boto3
 import os
 import time
-import requests
 from io import BytesIO
+
+import boto3
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -76,7 +77,7 @@ def upload_video_to_s3(video_data, folder='videos'):
     """ Upload a video to S3 by base64 string. """
     try:
         file_name = f"video_{int(time.time())}.mp4"
-        
+
         return upload_to_s3(video_data, file_name, folder=folder)
     except Exception as e:
         print(f"Error uploading video to S3: {e}")

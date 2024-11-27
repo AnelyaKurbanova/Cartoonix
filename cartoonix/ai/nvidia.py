@@ -6,6 +6,7 @@ import os
 load_dotenv()
 API_KEY = os.getenv("NVIDIA_API_KEY")
 
+
 def generate_video_from_images_with_nvidia(image_urls):
     """ Generate video using Nvidia's API based on a list of image URLs.
     :param image_urls: List of URLs of the images used for video generation

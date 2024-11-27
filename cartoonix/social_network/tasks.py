@@ -4,6 +4,7 @@ from .models import Notification
 
 logger = logging.getLogger('notifications')
 
+
 @shared_task
 def create_notification(recipient_id, actor_id, verb, target_content_type=None, target_object_id=None):
     """
@@ -20,9 +21,11 @@ def create_notification(recipient_id, actor_id, verb, target_content_type=None, 
 
     return f"Notification created for user {recipient_id}"
 
+
 @shared_task
 def add(x, y):
     return x + y
+
 
 @shared_task
 def test_task():

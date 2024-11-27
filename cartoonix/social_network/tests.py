@@ -7,6 +7,7 @@ from rest_framework import status
 from .models import Post, Comment, Profile, FriendRequest
 from .serializers import PostSerializer
 
+
 class LoginPageTest(TestCase):
     def setUp(self):
         self.client = Client()

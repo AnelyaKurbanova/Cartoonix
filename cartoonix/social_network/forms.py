@@ -6,6 +6,7 @@ from .models import Post, Comment, Profile
 
 logger = logging.getLogger('form_logger')
 
+
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post

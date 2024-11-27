@@ -6,6 +6,7 @@ logger = logging.getLogger('middleware_logger')
 
 EXEMPT_URLS = [reverse('login_page'), reverse('register_user')]
 
+
 class LoginRequiredMiddleware:
     """
     Middleware for redirecting unauthorized users to the login page

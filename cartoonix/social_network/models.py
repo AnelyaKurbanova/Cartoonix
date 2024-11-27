@@ -10,6 +10,7 @@ from django.dispatch import receiver
 
 logger = logging.getLogger('model_logger')
 
+
 class Post(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()

@@ -1,6 +1,7 @@
 import os
-from openai import OpenAI
+
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -30,6 +31,7 @@ You are a creative screenwriter and a skilled visual storyteller. Your task is t
 
 6. Language requirement: Regardless of the language of the user’s request, all photo descriptions must be strictly in English.
 """
+
 
 def generate_photo_descriptions(user_prompt):
     """
@@ -65,6 +67,7 @@ def generate_photo_descriptions(user_prompt):
     except Exception as e:
         print(f"Error generating photo descriptions: {e}")
         return ['Error generating description'] * 5
+
 
 def generate_images_from_descriptions(descriptions):
     """

@@ -22,6 +22,7 @@ import logging
 
 logger = logging.getLogger('api_logger')
 
+
 def login_page(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -48,8 +49,6 @@ def login_page(request):
     responses={201: PostSerializer, 400: "Bad Request"},
     operation_description="Create a new post."
 )
-
-
 @api_view(['GET', 'POST'])
 def post_list(request):
     if request.method == 'GET':
@@ -73,21 +72,17 @@ def post_list(request):
     responses={200: PostSerializer, 404: "Not Found"},
     operation_description="Retrieve a specific post by id."
 )
-
 @swagger_auto_schema(
     method='put',
     request_body=PostSerializer,
     responses={200: PostSerializer, 400: "Bad Request", 403: "Forbidden"},
     operation_description="Update an existing post."
 )
-
 @swagger_auto_schema(
     method='delete',
     responses={204: "No Content", 403: "Forbidden"},
     operation_description="Delete a post by id."
 )
-
-
 @api_view(['GET', 'PUT', 'DELETE'])
 def post_detail(request, post_id):
     try:
@@ -127,15 +122,12 @@ def post_detail(request, post_id):
     responses={200: CommentSerializer(many=True), 404: "Not Found"},
     operation_description="Retrieve comments for a specific post."
 )
-
 @swagger_auto_schema(
     method='post',
     request_body=CommentSerializer,
     responses={201: CommentSerializer, 400: "Bad Request"},
     operation_description="Add a comment to a post."
 )
-
-
 @api_view(['GET', 'POST'])
 def comment_list(request, post_id):
     try:
@@ -227,15 +219,6 @@ def profile_update_view(request):
         form = ProfileForm(instance=profile)
 
     return render(request, 'update_profile.html', {'form': form})
-
-
-def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    is_liked = False
-    if post.likes.filter(user=request.user).exists():
-        is_liked = True
-    logger.info(f"User {request.user} viewed post {pk}. Liked: {is_liked}")
-    return render(request, 'posts/post_detail.html', {'post': post, 'is_liked': is_liked})
 
 
 @login_required
@@ -330,8 +313,6 @@ def delete_profile(request):
     responses={201: "Friend request sent successfully", 400: "Bad Request"},
     operation_description="Send a friend request to another user."
 )
-
-
 @csrf_exempt
 @api_view(['POST'])
 @login_required
@@ -370,8 +351,6 @@ def send_friend_request(request, profile_id):
     responses={200: "Friend request accepted", 404: "Not Found"},
     operation_description="Accept a received friend request."
 )
-
-
 @api_view(['POST'])
 @login_required
 def accept_friend_request(request, request_id):
@@ -400,8 +379,6 @@ def accept_friend_request(request, request_id):
     responses={200: "Friend request rejected", 404: "Not Found"},
     operation_description="Reject a received friend request."
 )
-
-
 @api_view(['POST'])
 @login_required
 def reject_friend_request(request, request_id):
@@ -422,8 +399,6 @@ def reject_friend_request(request, request_id):
     responses={200: "Friend removed successfully", 400: "Bad Request", 404: "Not Found"},
     operation_description="Remove a user from friends."
 )
-
-
 @api_view(['DELETE'])
 @login_required
 def remove_friend(request, profile_id):
@@ -582,6 +557,7 @@ def edit_post(request, post_id):
     logger.info(f"User {request.user.username} accessed the edit page for post {post_id}.")
     return render(request, 'edit_post.html', {'form': form, 'post': post})
 
+
 @login_required(login_url='/social_network/login/')
 def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -624,8 +600,6 @@ def delete_post(request, post_id):
     },
     security=[{'Token': []}],
 )
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @login_required
@@ -677,8 +651,6 @@ notification_id_param = openapi.Parameter(
     manual_parameters=[notification_id_param],
     security=[{'Token': []}],
 )
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @login_required
@@ -721,4 +693,3 @@ def search_users(request):
         'query': query,
         'user_statuses': user_statuses
     })
-
