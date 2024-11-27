@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Cartoonix</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-top: 60px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        .comment-form textarea {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .card-body img {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .card-body{
+            display: flex;
+            align-items: center;
+        }
+
+        .not-wrap{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btns-wrap{
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .main-button{
+            background-color: #6DC7FF;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">Cartoonix</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'profile_view' request.user.username %}">My Profile</a>
+                <a class="nav-link" href="{% url 'list_friends' %}">View Friends</a>
+                <a class="nav-link" href="{% url 'generate_video' %}">Generate Video</a>
+                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="mb-4 pt-4">Welcome, {{ request.user.username }}!</h2>
+
+        <div class="mb-4">
+            <a href="{% url 'create_post' %}" class="btn btn-primary main-button">Create New Post</a>
+        </div>
+
+        <h3 class="mb-3">Post List</h3>
+        <div class="row d-flex flex-column align-items-stretch">
+            {% for post in posts %}
+            <div class="col-md-6 mb-4 mx-auto">
+                <div class="card">
+                    <div class="card-body row">
+                        <div class="card__wrap col-md-6">
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="Post image" class="mb-3 w-100">
+                            {% endif %}
+
+                            <div class="not-wrap">
+                                {% if request.user in post.likes.all %}
+                                <div style="display: flex; gap: 5px;">
+                                    <svg data-post-id="{{ post.id }}" class="like-button" style="cursor: pointer;"  fill="#dc3545" height="24px" width="24px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                                    viewBox="0 0 471.701 471.701" xml:space="preserve">
+                                    <g>
+                                        <path d="M433.601,67.001c-24.7-24.7-57.4-38.2-92.3-38.2s-67.7,13.6-92.4,38.3l-12.9,12.9l-13.1-13.1
+                                            c-24.7-24.7-57.6-38.4-92.5-38.4c-34.8,0-67.6,13.6-92.2,38.2c-24.7,24.7-38.3,57.5-38.2,92.4c0,34.9,13.7,67.6,38.4,92.3
+                                            l187.8,187.8c2.6,2.6,6.1,4,9.5,4c3.4,0,6.9-1.3,9.5-3.9l188.2-187.5c24.7-24.7,38.3-57.5,38.3-92.4
+                                            C471.801,124.501,458.301,91.701,433.601,67.001z" fill="#dc3545"/>
+                                    </g>
+                                    </svg>
+                                    <span id="likes-count-{{ post.id }}">{{ post.total_likes }}</span>
+                                </div>
+                            {% else %}
+                            <div style="display: flex; gap: 5px;">
+                                <svg data-post-id="{{ post.id }}" class="like-button" style="cursor: pointer;" fill="#000" height="24px" width="24px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                            viewBox="0 0 471.701 471.701" xml:space="preserve">
+                                <g>
+                                    <path d="M433.601,67.001c-24.7-24.7-57.4-38.2-92.3-38.2s-67.7,13.6-92.4,38.3l-12.9,12.9l-13.1-13.1
+                                        c-24.7-24.7-57.6-38.4-92.5-38.4c-34.8,0-67.6,13.6-92.2,38.2c-24.7,24.7-38.3,57.5-38.2,92.4c0,34.9,13.7,67.6,38.4,92.3
+                                        l187.8,187.8c2.6,2.6,6.1,4,9.5,4c3.4,0,6.9-1.3,9.5-3.9l188.2-187.5c24.7-24.7,38.3-57.5,38.3-92.4
+                                        C471.801,124.501,458.301,91.701,433.601,67.001z M414.401,232.701l-178.7,178l-178.3-178.3c-19.6-19.6-30.4-45.6-30.4-73.3
+                                        s10.7-53.7,30.3-73.2c19.5-19.5,45.5-30.3,73.1-30.3c27.7,0,53.8,10.8,73.4,30.4l22.6,22.6c5.3,5.3,13.8,5.3,19.1,0l22.4-22.4
+                                        c19.6-19.6,45.7-30.4,73.3-30.4c27.6,0,53.6,10.8,73.2,30.3c19.6,19.6,30.3,45.6,30.3,73.3
+                                        C444.801,187.101,434.001,213.101,414.401,232.701z"/>
+                                </g>
+                            </svg>
+                                <span id="likes-count-{{ post.id }}">{{ post.total_likes }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if post.author == request.user %}
+                                <div class="btns-wrap">
+                                    <form action="{% url 'delete_post' post.id %}" method="POST" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" style="border: none; background-color: transparent;" onclick="return confirm('Are you sure you want to delete this post?');"><svg width="30" height="30" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M35.625 7.5H29.0625L27.1875 5.625H17.8125L15.9375 7.5H9.375V11.25H35.625M11.25 35.625C11.25 36.6196 11.6451 37.5734 12.3483 38.2766C13.0516 38.9799 14.0054 39.375 15 39.375H30C30.9946 39.375 31.9484 38.9799 32.6516 38.2766C33.3549 37.5734 33.75 36.6196 33.75 35.625V13.125H11.25V35.625Z" fill="#7C7C7C"/>
+                                            </svg>
+                                            </button>
+                                    </form>
+        
+                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-primary main-button">Edit</a>
+                                </div>
+                            {% endif %}
+                            </div>
+
+                        </div>
+                        <div class="card__wrap col-md-6">
+                            <h5 class="card-title">{{ post.title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">by {{ post.author.username }}</h6>
+                            <p class="card-text">{{ post.content }}</p>
+            
+                            <h6 class="mt-3">Comments</h6>
+                            <ul class="list-unstyled" id="comments-list-{{ post.id }}">
+                                {% for comment in post.comments.all %}
+                                    <li>{{ comment.content }} - by <a href="{% url 'profile_view' comment.author.username %}">{{ comment.author.username }}</a></li>
+                                {% endfor %}
+                            </ul>
+            
+                            <h6>Add a comment:</h6>
+                            <form id="comment-form-{{ post.id }}" class="comment-form" data-post-id="{{ post.id }}">
+                                {% csrf_token %}
+                                <textarea id="comment-content-{{ post.id }}" class="form-control" placeholder="Your comment" required></textarea>
+                                <button type="submit" class="btn btn-primary main-button">Post Comment</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p>No posts available.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.like-button').forEach(button => {
+            button.addEventListener('click', async function () {
+                const postId = this.getAttribute('data-post-id');
+                const url = `/social_network/posts/${postId}/like/`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({}),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const likesCountElement = document.getElementById(`likes-count-${postId}`);
+                    likesCountElement.textContent = data.total_likes;
+
+                    if (data.liked) {
+                        this.innerHTML = `
+                        <g>
+                            <path d="M433.601,67.001c-24.7-24.7-57.4-38.2-92.3-38.2s-67.7,13.6-92.4,38.3l-12.9,12.9l-13.1-13.1
+                                c-24.7-24.7-57.6-38.4-92.5-38.4c-34.8,0-67.6,13.6-92.2,38.2c-24.7,24.7-38.3,57.5-38.2,92.4c0,34.9,13.7,67.6,38.4,92.3
+                                l187.8,187.8c2.6,2.6,6.1,4,9.5,4c3.4,0,6.9-1.3,9.5-3.9l188.2-187.5c24.7-24.7,38.3-57.5,38.3-92.4
+                                C471.801,124.501,458.301,91.701,433.601,67.001z" fill="#dc3545"/>
+                        </g>`;
+                    } else {
+                        this.innerHTML = `
+                                        <g>
+                                            <path d="M433.601,67.001c-24.7-24.7-57.4-38.2-92.3-38.2s-67.7,13.6-92.4,38.3l-12.9,12.9l-13.1-13.1
+                                                c-24.7-24.7-57.6-38.4-92.5-38.4c-34.8,0-67.6,13.6-92.2,38.2c-24.7,24.7-38.3,57.5-38.2,92.4c0,34.9,13.7,67.6,38.4,92.3
+                                                l187.8,187.8c2.6,2.6,6.1,4,9.5,4c3.4,0,6.9-1.3,9.5-3.9l188.2-187.5c24.7-24.7,38.3-57.5,38.3-92.4
+                                                C471.801,124.501,458.301,91.701,433.601,67.001z M414.401,232.701l-178.7,178l-178.3-178.3c-19.6-19.6-30.4-45.6-30.4-73.3
+                                                s10.7-53.7,30.3-73.2c19.5-19.5,45.5-30.3,73.1-30.3c27.7,0,53.8,10.8,73.4,30.4l22.6,22.6c5.3,5.3,13.8,5.3,19.1,0l22.4-22.4
+                                                c19.6-19.6,45.7-30.4,73.3-30.4c27.6,0,53.6,10.8,73.2,30.3c19.6,19.6,30.3,45.6,30.3,73.3
+                                                C444.801,187.101,434.001,213.101,414.401,232.701z"/>
+                                        </g>`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.comment-form').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const postId = form.getAttribute('data-post-id');
+                    const commentContent = document.getElementById(`comment-content-${postId}`).value;
+
+                    fetch(`/social_network/posts/${postId}/comments/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            content: commentContent
+                        })
+                    })
+                    .then(response => {
+                        if (response.status === 201) {
+                            document.getElementById(`comment-content-${postId}`).value = '';
+                            location.reload();
+                        } else {
+                            alert('Failed to post comment');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

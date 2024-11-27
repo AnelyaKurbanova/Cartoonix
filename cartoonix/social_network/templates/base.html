@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cartoonix{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Cartoonix</h1>
+        <nav>
+            <ul>
+
+                {% if user.is_authenticated %}
+                {% else %}
+                    <a href="{% url 'token_obtain_pair' %}">Login</a>
+                    <li><a href="{% url 'register_user' %}">Register</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; {{ current_year }} Cartoonix</p>
+    </footer>
+</body>
+</html>
+

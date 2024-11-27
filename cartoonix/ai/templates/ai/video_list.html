@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Generated Videos</title>
+
+    <style>
+                .main-button{
+            background-color: #6DC7FF;
+            border: none
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">Cartoonix</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'profile_view' request.user.username %}">My Profile</a>
+                <a class="nav-link" href="{% url 'list_friends' %}">View Friends</a>
+                <a class="nav-link" href="{% url 'generate_video' %}">Generate Video</a>
+                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 class="mb-4">Generated Videos</h1>
+        
+        <form id="generateVideoForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="prompt">Enter Video Prompt:</label>
+                <input type="text" id="prompt" name="prompt" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2 main-button">Generate Video</button>
+        </form>
+
+        <div class="row mt-4">
+            {% for video in videos %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Prompt: {{ video.prompt }}</h5>
+
+                            <div class="videos">
+                                <video class="w-100" controls>
+                                    <source src="{{ video.finalVideo }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+
+                                <a href="{{ video.finalVideo }}" download="GeneratedVideo.mp4" class="btn btn-success mt-2 mb-3">Download Video</a>
+                            </div>
+
+                            <div id="carousel{{ video.id }}" class="carousel slide mb-3" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    {% for image in video.arrImages %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            <img src="{{ image }}" class="d-block w-100" alt="Generated Image">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ video.id }}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <script>
+        document.getElementById('generateVideoForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвращаем отправку формы
+            const userPrompt = document.getElementById('prompt').value;
+            generateVideo(userPrompt);
+        });
+
+        function generateVideo(userPrompt) {
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    fetch('/ai/generate/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: userPrompt })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to generate video');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Video generated successfully!');
+        console.log(data);
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
